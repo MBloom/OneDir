@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+
+{% block main %}
+<h3>Users</h3>
+{% for user in users %}
+   <ul>{{ user.name }} -- {{ user.password }}</ul>
+{% endfor %}
+
+{% endblock main %}

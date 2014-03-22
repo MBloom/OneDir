@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+
+{% block main %}
+<h3>Login to manage users: <a href={{ url_for('admin') }}>here</a></h3>
+<h4>Everbody's files</h4>
+{% for file in files %}
+   <ul><a href={{ url_for('file_view', hash=file.name) }}>{{ file.name }}</a></ul>
+{% endfor %}
+{% endblock main %}
