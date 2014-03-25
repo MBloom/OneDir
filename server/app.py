@@ -1,5 +1,5 @@
-from flask import Flask, request, g, render_template, redirect, abort
-from flask.ext.login import LoginManager, login_required
+from flask import Flask, request, g, render_template, redirect, abort, url_for
+from flask.ext.login import LoginManager, login_required, login_user, logout_user
 
 import config, models
 from models import Session, User, File
@@ -14,28 +14,29 @@ login_manager.init_app(app)
 # initializes a per request db session
 @app.before_request
 def create_session():
-    print "before request"
     g.db = Session()
 
 # closes and commits that session
 @app.after_request
 def commit_session(resp):
-    print "after request"
     g.db.commit()
     return resp
 
 @login_manager.user_loader
 def load_user(uname):
     # returns none if user does not exist
+    print "yay"
     return models.get_user(uname)
 
 @app.route('/login/', methods=["GET", "POST"])
 def login():
-    form = LoginForm()
+    form = LoginForm(request.form)
     if form.validate():
         # since the form isn't bad, we check for valid user
         if User.check_password(form.data['username'], 
                                form.data['password']):
+            user = models.get_user(form.data['username'])
+            login_user(user)
 	    return redirect(request.args.get("next") or url_for("home"))
     return render_template("login.html", form=form)
 
@@ -44,8 +45,8 @@ def logout():
     logout_user()
     return redirect(url_for("home"))
 
-@login_required
 @app.route('/admin')
+@login_required
 def admin():
     users = g.db.query(User).all()
     return render_template('admin.html', users=users)

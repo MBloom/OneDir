@@ -13,9 +13,7 @@ Session = sessionmaker(bind=engine)
 
 #returns a single user from the db
 def get_user(name):
-    session = Session()
-    return session.query(User).filter_by(name=name).first()
-    #return g.db.query(User).filter_by(name=name).first()
+    return g.db.query(User).filter_by(name=name).first()
 
 class User(Base):
     __tablename__ = 'users'
@@ -32,16 +30,16 @@ class User(Base):
         return actual.password == password
 
     #Flask-login required functions
-    def is_authenticated():
+    def is_authenticated(self):
             return True
 
-    def is_active():
+    def is_active(self):
         return True
 
-    def is_anonymous():
+    def is_anonymous(self):
         return False
 
-    def get_id():
+    def get_id(self):
         u = get_user(self.name)
         return u.name
 
