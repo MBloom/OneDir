@@ -1,2 +1,2 @@
-DROP TABLE IF EXISTS courseInfo;
-CREATE TABLE courseInfo (deptID text, courseNum int, semester int, meetingType text, seatsTaken int, seatsOffered int, instructor text);
+DROP TABLE IF EXISTS files;
+CREATE TABLE files (name text, content text);
