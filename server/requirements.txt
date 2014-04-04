@@ -3,3 +3,4 @@ Flask-login
 sqlalchemy
 wtforms
 Flask-api
+PyCrypto
