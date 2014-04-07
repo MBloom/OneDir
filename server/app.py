@@ -1,4 +1,4 @@
-from flask import Flask, request, g, render_template, redirect, abort, url_for
+from flask import Flask, request, g, render_template, redirect, abort, url_for, Response
 from flask.ext.login import LoginManager, login_required, login_user, logout_user
 
 import config, models
@@ -33,9 +33,8 @@ def login():
     form = LoginForm(request.form)
     if form.validate():
         # since the form isn't bad, we check for valid user
-        if User.check_password(form.data['username'], 
-                               form.data['password']):
-            user = models.get_user(form.data['username'])
+        user = models.get_user(form.data['username'])
+        if user != None and User.check_password(form.data['username'], form.data['password']):
             login_user(user)
 	    return redirect(request.args.get("next") or url_for("home"))
     return render_template("login.html", form=form)
@@ -53,16 +52,19 @@ def admin():
 
 @app.route('/')
 def home():
-    files = g.db.query(File).all()
+	uname = "nick"
+    files = g.db.query(File).filter_by(owner=uname).all()
     print len(files)
     return render_template('home.html', files=files)
 
-@app.route('/file/<string:hash>')
-def file_view(hash):
-    file = g.db.query(File).filter_by(name=hash).first() 
+@app.route('/file/<string:name>')
+def file_view(name):
+    file = g.db.query(File).filter_by(name=name).first() 
+    resp = Response(mimetype='text/plain')
+    resp.set_data(file.content)
     if file is None:
 	abort(404)
-    return str(file.content)
+    return resp
 
 if __name__ == '__main__':
     app.run('0.0.0.0', port=19199,  debug=True)

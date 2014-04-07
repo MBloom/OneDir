@@ -2,7 +2,7 @@
 from flask.ext.api import FlaskAPI, status
 from flask import g, request
 
-from models import User, File, FileMeta, Session
+from models import User, File, Session
 
 api = FlaskAPI(__name__)
 
@@ -18,44 +18,43 @@ def commit_session(resp):
     g.db.commit()
     return resp
 
-@api.route("/api/file/<string:_hash>", methods=["GET", "POST",])
-def file(_hash):
-    if request.method == "POST":
-        content = request.data.get('content', '')        
-        to_make = File(content)
-        if to_make._hash == _hash:
+@api.route("/api/<string:username>/<string:filename>", methods=["GET", "POST", "PUT", "DELETE"])
+def file(username, filename):
+    user = g.db.query(User).get(username)
+    if user is None:
+        return "", status.HTTP_405_METHOD_NOT_ALLOWED
+    if request.method == "PUT":
+        file = g.db.query(File).get(name)
+        pass
+    # if user is authorized
+    elif request.method == "POST":
+            content = request.data.get('content', '')    
+            to_make = File(filename, content)
+            user.files.append(to_make)
             g.db.add(to_make)
-        return "", status.HTTP_201_CREATED
-    else:
-        f = g.db.query(File).get(_hash)
-        return f.to_dict()
+            return "It worked", status.HTTP_201_CREATED
+    elif request.method == "DELETE":
+        pass
+    else: #GET
+        file = g.db.query(File).get(name)
+        if file is None:
+            return "", status.HTTP_404_NOT_FOUND
+        return file.to_dict()
+             
 
-@api.route("/api/meta/<string:name_hash>", methods=['GET', 'POST'])
-def meta(name_hash):
-    if request.method == "POST":
-        permissions = request.data.get('permissions', '')
-        file = request.data.get('hash', '')
-        new_file_meta = FileMeta(name_hash)        
-        # save meta data
-        g.db.add(file_meta)
-        return "", status.HTTP_201_CREATED
-    else:
-        fm = g.db.query(FileMeta).get(name_hash)
-        return fm.to_dict()
 
-@api.route("/api/<string:username>/active")
-def active(username):
+@api.route("/api/<string:username>")
+def all_files(username):
     """Returns all the active file our user has in their dir"""
     user = g.db.query(User).get(username)
-    actives = filter(lambda x: x.active, user.meta_files)
+    actives = filter(lambda x: x.active, user.files)
     return [a.to_dict() for a in actives] 
 
 @api.route("/api/<string:username>/files")
 def files(username):
     """Gets all files for specific user"""
     user = g.db.query(User).get(username)
-    mfs = user.meta_files
-    files = [meta.file.to_dict() for meta in mfs]
+    files = [f.to_dict() for f in user.files]
     return files
 
 if __name__ == '__main__':
