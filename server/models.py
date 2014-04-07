@@ -1,13 +1,14 @@
 from hashlib import sha256
+from datetime import datetime
 
-from sqlalchemy import Column, String, LargeBinary, create_engine, ForeignKey, Boolean
+from sqlalchemy import Column, String, LargeBinary, create_engine, ForeignKey, Boolean, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from flask import g
 
 DB_NAME = 'test.db'
 
-engine = create_engine('sqlite:///%s' % DB_NAME, echo=True)
+engine = create_engine('sqlite:///%s' % DB_NAME, echo=False)
 Base = declarative_base()
 
 # global application level session, which handles all conversations with the db
@@ -51,7 +52,8 @@ class File(Base):
     # name + creation date is primary key
     name = Column(String, primary_key=True)
     owner = Column(String, ForeignKey('users.name'), primary_key=True)
-    stored_on = Column(String) 
+    stored_on = Column(DateTime) 
+    path = Column(String) 
     active = Column(Boolean)
     permissions = Column(String)
 
@@ -67,12 +69,16 @@ class File(Base):
               }
         return out
 
-    def __init__(self, name, content):
-        self.name = name
-        self.stored_on = "blah"
-        self.permissions = "0600"
+    def __init__(self, **kwargs):
+        """takes a set of kwargs and assigns them to the objects attributes 
+        of the same name"""
+        # These are sane defaults
         self.active = True
-        self.content = content
+        self.permissions = "0600"
+        self.path = "./"
+        for key, val in kwargs.iteritems():
+            setattr(self, key, val)
+        self.stored_on = datetime.now()
 
 if __name__ == '__main__':
     Base.metadata.create_all(engine)

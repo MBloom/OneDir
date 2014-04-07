@@ -18,25 +18,36 @@ def commit_session(resp):
     g.db.commit()
     return resp
 
-@api.route("/api/<string:username>/<string:filename>", methods=["GET", "POST", "PUT", "DELETE"])
+@api.route("/api/file/<string:username>/<string:filename>", 
+           methods=["GET", "POST", "PUT", "DELETE"])
 def file(username, filename):
+    # Must Check credentials for every method
     user = g.db.query(User).get(username)
+    file = g.db.query(File).filter(File.name == filename, File.owner == user.name).first()
     if user is None:
         return "", status.HTTP_405_METHOD_NOT_ALLOWED
     if request.method == "PUT":
-        file = g.db.query(File).get(name)
-        pass
-    # if user is authorized
+        if file is None:
+            return "", status.HTTP_405_METHOD_NOT_ALLOWED
+        data = request.get_json()
+        to_update = File(name=filename, **data)
+        g.db.remove(file)
+        g.db.add(to_update)
+        return "", status.HTTP_202
     elif request.method == "POST":
-            content = request.data.get('content', '')    
-            to_make = File(filename, content)
-            user.files.append(to_make)
-            g.db.add(to_make)
-            return "It worked", status.HTTP_201_CREATED
+        if file is not None:
+            return "", status.HTTP_409_CONFLICT
+        data = request.get_json()
+        to_make = File(name=filename, **data)
+        user.files.append(to_make)
+        g.db.add(to_make)
+        return "", status.HTTP_201_CREATED
     elif request.method == "DELETE":
-        pass
+        if file is None:
+            return "", status.HTTP_405_METHOD_NOT_ALLOWED
+        g.db.delete(file)
+        return "", status.HTTP_202_ACCEPTED
     else: #GET
-        file = g.db.query(File).get(name)
         if file is None:
             return "", status.HTTP_404_NOT_FOUND
         return file.to_dict()
