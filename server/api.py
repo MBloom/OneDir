@@ -31,9 +31,9 @@ def file(username, filename):
             return "", status.HTTP_405_METHOD_NOT_ALLOWED
         data = request.get_json()
         to_update = File(name=filename, **data)
-        g.db.remove(file)
+        g.db.delete(file)
         g.db.add(to_update)
-        return "", status.HTTP_202
+        return "", status.HTTP_202_ACCEPTED
     elif request.method == "POST":
         if file is not None:
             return "", status.HTTP_409_CONFLICT

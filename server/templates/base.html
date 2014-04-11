@@ -4,13 +4,24 @@
         <title>{% block title %}{% endblock title %}</title>
         <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.0/jquery.js"></script>
         <link href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet" />
+        <!-- stylesheet for narrow jumbotron -->
+        <link href="http://getbootstrap.com/examples/jumbotron-narrow/jumbotron-narrow.css" rel="stylesheet">
         <script src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
         {% block head %}
         {% endblock head %}
     </head>
     <body>
         <div class="container">
-            {% block main %}{% endblock main %}
+            <div class="header">
+                <ul class="nav nav-pills pull-right">
+                  <li class="active"><a href="#">Home</a></li>
+                  <li><a href={{ url_for('login') }}>Login</a></li>
+                </ul>
+                <h3 class="text-muted">THIS IS DOPE!</h3>
+            </div>
+            <div class="container">
+                {% block main %}{% endblock main %}
+            </div>
         </div>
     </body>
 </html>

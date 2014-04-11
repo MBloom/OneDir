@@ -1,5 +1,5 @@
 from flask import Flask, request, g, render_template, redirect, abort, url_for, Response
-from flask.ext.login import LoginManager, login_required, login_user, logout_user
+from flask.ext.login import LoginManager, login_required, login_user, logout_user, current_user
 
 import config, models
 from models import Session, User, File
@@ -52,10 +52,10 @@ def admin():
 
 @app.route('/')
 def home():
-	uname = "nick"
+    uname = current_user.get_id()
     files = g.db.query(File).filter_by(owner=uname).all()
     print len(files)
-    return render_template('home.html', files=files)
+    return render_template('home.html', files=files, uname=uname)
 
 @app.route('/file/<string:name>')
 def file_view(name):
