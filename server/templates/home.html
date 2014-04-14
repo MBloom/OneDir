@@ -10,10 +10,14 @@
         <p class="lead">Here is a list of all your files that have been uploaded to the !PROJECT NAME! server. To view the contents of any file simple click on it's name below.</p>
 </div>
 <div>
-	<h4>Your files</h4>
-	{% for file in files %}
-	   <ul><a href={{ url_for('file_view', name=file.name) }}>{{ file.name }}</a></ul>
-	{% endfor %}
+	{% if files|length == 0 %}
+		<h4>You have no files to display</h4>
+	{% else %}
+		<h4>Your files</h4>
+		{% for file in files %}
+		   <ul><a href={{ url_for('file_view', name=file.name) }}>{{ file.name }}</a></ul>
+		{% endfor %}
+	{% endif %}
 {% endif %}
 </div>
 {% endblock main %}

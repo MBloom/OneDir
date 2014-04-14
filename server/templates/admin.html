@@ -1,9 +1,34 @@
 {% extends 'base.html' %}
 
 {% block main %}
-<h3>Users</h3>
-{% for user in users %}
-   <ul>{{ user.name }} -- {{ user.password }}</ul>
-{% endfor %}
+<script type="text/javascript">
+	function toggleSibling(sibling){
+		sibling = sibling.nextSibling;
+		while(!/tr/i.test(sibling.nodeName)){
+			sibling = sibling.nextSibling;
+		}
+		sibling.style.display = sibling.style.display == 'table-row' ? 'none' : 'table-row';
+	}
+</script>
 
+<table class="table table-hover">
+	<tr>
+		<th>Username</th>
+		<th>Password</th>
+	</tr>
+{% for u in user_files %}
+   <tr id="a" onclick="toggleSibling(this)">
+	   <td>{{ u.name }}</td>
+	   <td>{{ u.password }}</td>
+	</tr>
+	<tr style="display:none;">
+		<td colspan="2">
+			{% for f in user_files[u] %}
+				<ul><a href={{ url_for('file_view', name=f.name) }}>{{ f.name }}</a></ul>
+			{% endfor %}
+		</td>
+	</tr>
+{% endfor %}
+</table>
+<h4>Total files: {{num_files}}</h4>
 {% endblock main %}

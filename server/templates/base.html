@@ -4,9 +4,19 @@
         <title>{% block title %}{% endblock title %}</title>
         <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.0/jquery.js"></script>
         <link href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet" />
+        <!-- custom stylesheet -->
+        <!-- <link rel="stylesheet" type="text/css" href="custom.css"> -->
         <!-- stylesheet for narrow jumbotron -->
         <link href="http://getbootstrap.com/examples/jumbotron-narrow/jumbotron-narrow.css" rel="stylesheet">
         <script src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+        <script type="text/javascript">
+        <!--
+        function toggle_visibility(id) {
+        var e = document.getElementById(id);
+        e.style.display = ((e.style.display!='none') ? 'none' : 'block');
+        }
+        //-->
+        </script>
         {% block head %}
         {% endblock head %}
     </head>
@@ -14,7 +24,7 @@
         <div class="container">
             <div class="header">
                 <ul class="nav nav-pills pull-right">
-                  <li class="active"><a href="#">Home</a></li>
+                  <li><a href="/">Home</a></li>
                   <li><a href={{ url_for('login') }}>Login</a></li>
                 </ul>
                 <h3 class="text-muted">THIS IS DOPE!</h3>
