@@ -3,11 +3,10 @@
 {% block main %}
 <div class = "jumbotron">
 {% if uname == None %}
-	<h3>Login to manage users: <a href={{ url_for('login') }}>here</a></h3>
-	<h4>Please login above.</h4>
+	<h2>Please <a href={{ url_for('login') }}>login</a> to access your files</h2>
 {% else %}
 	<h1>Welcome, {{ uname }}</h1>
-        <p class="lead">Here is a list of all your files that have been uploaded to the !PROJECT NAME! server. To view the contents of any file simple click on it's name below.</p>
+        <p class="lead">Here is a list of all your files that have been uploaded to the OneDir server. To view the contents of any file simple click on it's name below.</p>
 </div>
 <div>
 	{% if files|length == 0 %}
@@ -15,7 +14,7 @@
 	{% else %}
 		<h4>Your files</h4>
 		{% for file in files %}
-		   <ul><a href={{ url_for('file_view', name=file.name) }}>{{ file.name }}</a></ul>
+		<ul><a href={{ url_for('file_view', name=file.name) }}>{{ file.name }}</a></ul>
 		{% endfor %}
 	{% endif %}
 {% endif %}
