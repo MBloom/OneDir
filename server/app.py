@@ -54,7 +54,9 @@ def admin():
     for u in users:
         user_files[u] = g.db.query(File).filter_by(owner=u.name).all()
     return render_template('admin.html', user_files=user_files, num_files=num_files)
-    # if User.is_admin(form.data['username'], form.data['userclass']):
+    # # admin authentication
+    # curUser = g.db.query(users).filter_by(user=current_user.get_id()).first()
+    # if User.is_admin(curUser.name):
     #     return render_template('admin.html', user_files=user_files, num_files=num_files)
     # else:
     #     abort(404)
