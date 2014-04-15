@@ -54,6 +54,10 @@ def admin():
     for u in users:
         user_files[u] = g.db.query(File).filter_by(owner=u.name).all()
     return render_template('admin.html', user_files=user_files, num_files=num_files)
+    # if User.is_admin(form.data['username'], form.data['userclass']):
+    #     return render_template('admin.html', user_files=user_files, num_files=num_files)
+    # else:
+    #     abort(404)
 
 @app.route('/')
 def home():

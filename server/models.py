@@ -40,6 +40,11 @@ class User(Base):
         actual = get_user(uname)
         return actual.password == password
 
+    @classmethod
+    def is_admin(cls, uname):
+        actual = get_user(uname)
+        return actual.userClass == "admin"
+
     #Flask-login required functions
     def is_authenticated(self):
             return True
