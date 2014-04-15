@@ -4,8 +4,9 @@ from flask.ext.login import LoginManager, login_required, login_user, logout_use
 import config, models
 from models import Session, User, File
 from forms import LoginForm
+import collections
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 app.config.from_object(config)
 
 login_manager = LoginManager()
@@ -25,7 +26,7 @@ def commit_session(resp):
 @login_manager.user_loader
 def load_user(uname):
     # returns none if user does not exist
-    print "yay"
+    # print "yay"
     return models.get_user(uname)
 
 @app.route('/login/', methods=["GET", "POST"])
@@ -47,14 +48,18 @@ def logout():
 @app.route('/admin')
 @login_required
 def admin():
+    num_files = len(g.db.query(File).all())
+    user_files = {}
     users = g.db.query(User).all()
-    return render_template('admin.html', users=users)
+    for u in users:
+        user_files[u] = g.db.query(File).filter_by(owner=u.name).all()
+    return render_template('admin.html', user_files=user_files, num_files=num_files)
 
 @app.route('/')
 def home():
     uname = current_user.get_id()
     files = g.db.query(File).filter_by(owner=uname).all()
-    print len(files)
+    # print len(files)
     return render_template('home.html', files=files, uname=uname)
 
 @app.route('/file/<string:name>')

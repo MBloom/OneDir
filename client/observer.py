@@ -21,6 +21,8 @@ Files modified:\n {diff.files_modified}
 Files moved: \n {diff.files_moved}
 Files deleted: \n {diff.files_deleted}
 Dirs created: \n {diff.dirs_created}
+Dirs moved: \n {diff.dirs_moved}
+Dirs deleted: \n {diff.dirs_deleted}
     """.format(diff=diff, time=datetime.now())
     print out
 
@@ -47,49 +49,66 @@ def make_change_set(diff):
     d_creat, d_mod = diff.dirs_created, diff.dirs_modified
     d_mov, d_delet = diff.dirs_moved, diff.dirs_deleted
 
-    # file reports it has been created and deleted
+    # file reports if it has been created and deleted
     conflicts = set([f for f in creat if f in delet])
 
     out_set  = [('create', f) for f in creat if f not in conflicts]
     out_set += [('delete', f) for f in delet if f not in conflicts]
     out_set += [('modified', f) for f in mod if f not in conflicts]
-    out_set += [('moved', tup) for tup in mov]
+    out_set += [('moved', tup) for tup in mov if len(d_mov) ==0]
 
     out_set += [('modified', f) for f in conflicts]
 
+    out_set += [('create_dir', f) for f in d_creat]
+
+    out_set += [('delete_dir', f) for f in d_delet]
+
+    out_set += [('moved_dir', tup) for tup in d_mov]
+
     return out_set
 
-def file_dict(filename):
+def file_dict(path):
     """This function will returns the parameters a file obj in our database needs"""
-    content = hexlify(open(filename, 'rb').read())
+    content = hexlify(open(path, 'rb').read())
+    size = os.path.getsize(path)
     to_send = {'content': content,
-               'path': 'batcave',
-               'active': True,
-               'permissions': '0600' 
+               'permissions': '0600',
+               'size': size
               }
     return to_send
 
 
 def commit_changes(out_set):
     """Commits the changes in the local directory up to our server"""
-
     resps = []
     for (action, file_t) in out_set:
-        filename = file_t
+        # these variables are overloaded
+        file_path = file_t
+        dir = file_path
         if action == "create":
-            file_d = file_dict(filename)
-            sc = API.create_file(filename, file_d) 
+            file_d = file_dict(file_path)
+            sc = API.create_file(file_path, file_d) 
         elif action == "delete":
-            sc = API.delete_file(filename)
+            sc = API.delete_file(file_path)
         elif action == "modified":
-            file_d = file_dict(filename)
-            sc = API.change_file(filename, file_d)
+            file_d = file_dict(file_path)
+            sc = API.change_file(file_path, file_d)
         elif action == "moved":
-            print "not implmented"
-        else: 
+            from_file, to_file = file_t
+            sc = API.move_file(from_file, to_file)
+        elif action == "create_dir":
+            dir = file_path
+            sc = API.create_dir(dir)
+        elif action == "delete_dir":
+            dir = file_path
+            sc = API.delete_dir(dir)
+        elif action == "moved_dir":
+            from_dir, to_dir = file_t
+            sc = API.move_dir(from_dir, to_dir)
+        else:
             # Never get here
+            print "THIS IS BAD"
             pass
-
 
 
 def take_snapshot():
@@ -109,7 +128,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         path = sys.argv[1]
         PATH = os.path.realpath(path)
-    API = ClientAPI(PATH, "nick")
+    API = ClientAPI(PATH, "nick", host="localhost:5000")
     print "Starting to watch in %s" % PATH
     
     try:
@@ -121,8 +140,5 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print "Killing program"
         quit()
-
-
-
 
 
