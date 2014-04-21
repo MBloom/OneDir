@@ -29,11 +29,12 @@ class User(Base):
 
     name = Column(String, primary_key=True)
     password = Column(String)
+    userClass = Column(String)
     files = relationship("File")
     dirs = relationship("Directory")
 
     def __repr__(self):
-        return "<User(name={}, pw={})>".format(self.name, self.password)
+        return "<User(name={}, pw={}, class={})>".format(self.name, self.password, self.userClass)
 
     @classmethod
     def check_password(cls, uname, password):
@@ -112,11 +113,11 @@ class File(Base):
 if __name__ == '__main__':
     Base.metadata.create_all(engine)
     session = Session()
-    nick = User(name="nick", password="pass")
+    admin = User(name="admin", password="pass", userClass="admin")
     root = Directory()
-    nick.dirs.append(root)
+    admin.dirs.append(root)
     root.path = "/"
-    session.add(nick)
+    session.add(admin)
     session.add(root)
     import os
     for fname in os.listdir('../playground'):
@@ -124,7 +125,7 @@ if __name__ == '__main__':
             d = hexlify(open(fname).read())
             f = File(name=fname, content=d) 
             root.files.append(f)
-            nick.files.append(f)
+            admin.files.append(f)
             session.add(f)
         except IOError:
             pass

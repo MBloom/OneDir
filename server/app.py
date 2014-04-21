@@ -29,6 +29,9 @@ def load_user(uname):
     # print "yay"
     return models.get_user(uname)
 
+def create_user(uname, password):
+	return "Done"
+
 @app.route('/login/', methods=["GET", "POST"])
 def login():
     form = LoginForm(request.form)
@@ -54,12 +57,13 @@ def admin():
     for u in users:
         user_files[u] = g.db.query(File).filter_by(owner=u.name).all()
     return render_template('admin.html', user_files=user_files, num_files=num_files)
-    # # admin authentication
-    # curUser = g.db.query(users).filter_by(user=current_user.get_id()).first()
-    # if User.is_admin(curUser.name):
-    #     return render_template('admin.html', user_files=user_files, num_files=num_files)
-    # else:
-    #     abort(404)
+    # admin authentication
+    admins = g.db.query(User).filter_by(user="admin")
+    for a in admins:
+        if current_user.get_id() == a:
+            return render_template('admin.html', user_files=user_files, num_files=num_files)
+    else:
+        abort(404)
 
 @app.route('/')
 def home():
@@ -74,7 +78,7 @@ def file_view(name):
     resp = Response(mimetype='text/plain')
     resp.set_data(file.content)
     if file is None:
-	abort(404)
+		abort(404)
     return resp
 
 if __name__ == '__main__':
