@@ -3,7 +3,7 @@ from flask.ext.login import LoginManager, login_required, login_user, logout_use
 
 import config, models
 from models import Session, User, File
-from forms import LoginForm
+from forms import LoginForm, AccountForm
 import collections
 
 app = Flask(__name__, static_folder='static')
@@ -29,8 +29,26 @@ def load_user(uname):
     # print "yay"
     return models.get_user(uname)
 
-def create_user(uname, password):
-	return "Done"
+@app.route('/create/', methods=["GET", "POST"])
+def create_user():
+    form = AccountForm(request.form)
+    if form.validate():
+        user = models.get_user(form.data['username'])
+        if user != None:
+            message = "User already exists. Please choose another username."
+            return render_template("create.html", form=form, message=message)
+        elif form.data['password'] != form.data['auth_pass']:
+            message = "Passwords do not match."
+            return render_template("create.html", form=form, message=message)
+        else:
+            new_user = User(name=form.data['username'],
+                            password=form.data['password'],
+                            userClass="scrub")
+            g.db.add(new_user)
+            login_user(new_user)
+            return redirect(url_for("home"))
+    print form.data
+    return render_template("create.html", form=form, message=None)
 
 @app.route('/login/', methods=["GET", "POST"])
 def login():
@@ -42,6 +60,7 @@ def login():
             login_user(user)
 	    return redirect(request.args.get("next") or url_for("home"))
     return render_template("login.html", form=form)
+
 
 @app.route('/logout/')
 def logout():
@@ -58,10 +77,9 @@ def admin():
         user_files[u] = g.db.query(File).filter_by(owner=u.name).all()
     return render_template('admin.html', user_files=user_files, num_files=num_files)
     # admin authentication
-    admins = g.db.query(User).filter_by(user="admin")
-    for a in admins:
-        if current_user.get_id() == a:
-            return render_template('admin.html', user_files=user_files, num_files=num_files)
+    admins = g.db.query(User).filter_by(userClass="admin")
+    if current_user.get_id() in admins:
+        return render_template('admin.html', user_files=user_files, num_files=num_files)
     else:
         abort(404)
 

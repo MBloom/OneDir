@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block main %}
+<style type="text/css">
+  /* Override some defaults */
+  html, body {
+    background-color: #eee;
+  } 
+
+  /* The white background content wrapper */
+  .container > .content {
+    background-color: #fff;
+    width: 300px;
+    padding: 20px;
+    margin: 0 -20px; 
+    -webkit-border-radius: 10px 10px 10px 10px;
+       -moz-border-radius: 10px 10px 10px 10px;
+            border-radius: 10px 10px 10px 10px;
+    -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.15);
+       -moz-box-shadow: 0 1px 2px rgba(0,0,0,.15);
+            box-shadow: 0 1px 2px rgba(0,0,0,.15);
+  }
+
+  .login-form {
+    margin-left: 65px;
+  }
+
+  legend {
+    margin-right: -50px;create.html
+    font-weight: bold;
+      color: #404040;
+  }
+
+</style>
+<div align="center" class="container">
+	<div class="content">
+	<div class="row">
+	    <div class="span12">
+	        <form method=post action={{ url_for('create_user') }}>
+	            <fieldset>
+				    <h3>Sign-Up</h3>
+				    {% if message != None %}
+				    <h4>{{message}}</h4>
+				    {%endif%}
+				    <div class="control-group" style="padding-bottom:10px;">
+				      <!-- Username -->
+				      <div class="controls">
+				        <input type="text" id="username" name="username" placeholder="Username" class="input-xlarge">
+				      </div>
+				    </div>
+				    <div class="control-group" style="padding-bottom:10px;">
+				      <!-- Password-->
+				      <div class="controls">
+				        <input type="password" id="password" name="password" placeholder="Password" class="input-xlarge">
+				      </div>
+				    </div>
+				    <div class="control-group" style="padding-bottom:10px;">
+				      <!-- Password-->
+				      <div class="controls">
+				        <input type="password" id="auth_pass" name="auth_pass" placeholder="Repeate Password" class="input-xlarge">
+				      </div>
+				    </div>
+				    <div class="control-group">
+				      <!-- Button -->
+				      <div class="controls">
+				        <button class="btn btn-success">Create User</button>
+				      </div>
+				    </div>
+				</fieldset>
+			</form>
+	        {% if error %} {{ error }} {% endif %}
+        </div>
+        </div>
+	</div>
+</div>
+{% endblock main %}

@@ -109,6 +109,7 @@ class File(Base):
         if "content" in kwargs:
             self.content = unhexlify(self.content)
         self.stored_on = datetime.now()
+        self.size = len(self.content)
 
 if __name__ == '__main__':
     Base.metadata.create_all(engine)
