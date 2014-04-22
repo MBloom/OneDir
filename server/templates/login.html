@@ -2,11 +2,6 @@
 
 {% block main %}
 <style type="text/css">
-  /* Override some defaults */
-  html, body {
-    background-color: #eee;
-  } 
-
   /* The white background content wrapper */
   .container > .content {
     background-color: #fff;
@@ -57,6 +52,7 @@
 				        <button class="btn btn-success">Login</button>
 				      </div>
 				    </div>
+				    <a href="/create">Create new account</a>
 				</fieldset>
 			</form>
 	        {% if error %} {{ error }} {% endif %}

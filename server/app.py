@@ -29,7 +29,7 @@ def load_user(uname):
     # print "yay"
     return models.get_user(uname)
 
-@app.route('/create/', methods=["GET", "POST"])
+@app.route('/create', methods=["GET", "POST"])
 def create_user():
     form = AccountForm(request.form)
     if form.validate():
@@ -50,7 +50,7 @@ def create_user():
     print form.data
     return render_template("create.html", form=form, message=None)
 
-@app.route('/login/', methods=["GET", "POST"])
+@app.route('/login', methods=["GET", "POST"])
 def login():
     form = LoginForm(request.form)
     if form.validate():
@@ -62,7 +62,7 @@ def login():
     return render_template("login.html", form=form)
 
 
-@app.route('/logout/')
+@app.route('/logout')
 def logout():
     logout_user()
     return redirect(url_for("home"))

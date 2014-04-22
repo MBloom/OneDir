@@ -1,15 +1,19 @@
 from hashlib import sha256
 from datetime import datetime
 from binascii import hexlify, unhexlify
+import os
 
-from sqlalchemy import Column, String, LargeBinary, create_engine, ForeignKey, Boolean, DateTime, Integer
+from sqlalchemy import (Column, String, LargeBinary, 
+                        create_engine, ForeignKey, 
+                        Boolean, DateTime, Integer,
+                        Enum,)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from flask import g
 
 DB_NAME = 'test.db'
 
-engine = create_engine('sqlite:///%s' % DB_NAME, echo=False)
+engine = create_engine('sqlite:///%s' % DB_NAME, echo=True)
 Base = declarative_base()
 
 # global application level session, which handles all conversations with the db
@@ -27,11 +31,12 @@ def get_dir(name, path):
 class User(Base):
     __tablename__ = 'users'
 
-    name = Column(String, primary_key=True)
-    password = Column(String)
+    name      = Column(String, primary_key=True)
+    password  = Column(String)
     userClass = Column(String)
-    files = relationship("File")
-    dirs = relationship("Directory")
+
+    files     = relationship("File")
+    dirs      = relationship("Directory")
 
     def __repr__(self):
         return "<User(name={}, pw={}, class={})>".format(self.name, self.password, self.userClass)
@@ -63,10 +68,11 @@ class User(Base):
 class Directory(Base):
     __tablename__ = 'dirs'
 
-    inode = Column(Integer, autoincrement=True, primary_key=True)
-    owner = Column(String, ForeignKey('users.name'),) #primary_key=True)
-    path = Column(String, unique=True)
-    files = relationship('File')
+    inode    = Column(Integer, autoincrement=True, primary_key=True)
+    owner    = Column(String, ForeignKey('users.name'),) #primary_key=True)
+    path     = Column(String, unique=True)
+
+    files    = relationship('File', backref="container")
 
     def __init__(self, **kwargs):
         for key, val in kwargs.iteritems():
@@ -74,28 +80,28 @@ class Directory(Base):
 
     def to_dict(self):
         return {
-                 path: self.path,
-                 files: [file.name for file in self.files]
+                 'path': self.path,
+                 'files': [file.name for file in self.files]
                 }
 
 
 class File(Base):
     __tablename__ = 'files'
 
-    name = Column(String, primary_key=True)
-    owner = Column(String, ForeignKey('users.name'), primary_key=True)
-    dir = Column(Integer, ForeignKey('dirs.inode'), primary_key=True)
-    stored_on = Column(DateTime) 
+    name        = Column(String, primary_key=True)
+    # foreign keys to other tables
+    owner       = Column(String, ForeignKey('users.name'), primary_key=True)
+    dir         = Column(Integer, ForeignKey('dirs.inode'), primary_key=True)
+    stored_on   = Column(DateTime) 
     permissions = Column(String)
-
-    # foreign key out
-    content = Column(LargeBinary)
+    content     = Column(LargeBinary)
 
     def to_dict(self):
         out = { 'content': hexlify(self.content),
                 'name': self.name,
                 'permissions': self.permissions,
                 'stored_on': self.stored_on,
+                'file_path': os.path.join(self.container.path, self.name)
               }
         return out
 
@@ -109,7 +115,25 @@ class File(Base):
         if "content" in kwargs:
             self.content = unhexlify(self.content)
         self.stored_on = datetime.now()
-        self.size = len(self.content)
+        # self.size = os.path.getsize(???)
+
+class Transaction(Base):
+    __tablename__ = 'txns'
+
+    user        = Column(String, ForeignKey('users.name'), primary_key=True)
+    ip_address  = Column(String, primary_key=True)
+    action      = Column(Enum('CREATE', 'DELETE', 'UPDATE'))
+    timestamp   = Column(DateTime, default=datetime.utcnow, primary_key=True)
+    pathname    = Column(String)
+    type        = Column(Enum('DIR', 'FILE'))
+
+    def to_dict(self):
+        out = {'latest-changes': str(self.timestamp),
+                'action': self.action,
+                'pathname': self.pathname
+              }
+        return out
+
 
 if __name__ == '__main__':
     Base.metadata.create_all(engine)
@@ -121,13 +145,21 @@ if __name__ == '__main__':
     session.add(admin)
     session.add(root)
     import os
-    for fname in os.listdir('../playground'):
+    path = '../playground'
+    for fname in os.listdir(path):
         try:
-            d = hexlify(open(fname).read())
+            d = hexlify(open(os.path.join(path,fname)).read())
             f = File(name=fname, content=d) 
             root.files.append(f)
             admin.files.append(f)
             session.add(f)
+
+            # create a txn for the admin
+            tx = Transaction()
+            tx.user = admin.name
+            tx.ip_address = 'localhost:53434'
+            tx.pathname = fname
+            session.add(tx)
         except IOError:
             pass
     session.commit()

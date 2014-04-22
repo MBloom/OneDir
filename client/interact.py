@@ -1,6 +1,7 @@
 import random
 import os
 import json
+from datetime import datetime
 
 import requests
 from requests.exceptions import ConnectionError
@@ -33,7 +34,7 @@ def path_formulator(func):
 
 
 class ClientAPI():
-    def __init__(self, path, user, host="localhost:5000"):
+    def __init__(self, path, user, host="localhost:5000", password="empty"):
         """User of api and root path of filesystem"""
         self.root = path
         self.user = user
@@ -129,6 +130,30 @@ class ClientAPI():
         resp = requests.delete(url, headers=H)
         return resp.status_code
 
+    def get_latest(self):
+        url = "http://{}/api/latest-change/{}"\
+                                    .format(self.host,
+                                            self.user)
+        resp = requests.get(url, headers=H)
+        assert resp.status_code == 200
+        _json = resp.json()
+        str_date = _json.get('latest-changes')
+        latest_upstream = datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S.%f') 
+        return latest_upstream
+
+    def get_everything(self):
+        """The initial download from the server"""
+        url = "http://{}/api/all/{}".format(self.host, self.user)
+        resp = requests.get(url, headers=H)
+        assert resp.status_code == 200
+        _json = resp.json()
+        dirs = _json['dirs']
+        files = _json['files']
+        for d in files:
+            d['content'] = unhexlify(d['content'])
+        return (dirs, files)
+
+        
 
 if __name__ == '__main__':
     full_path = os.path.realpath('.')

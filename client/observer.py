@@ -123,22 +123,69 @@ def deal_with_diff(before, after):
         change_set = make_change_set(diff) 
         commit_changes(change_set)
 
+def latest_change(path):
+    """The directories will report modified if anything within them changes"""
+    stat = os.stat(path)
+    latest = datetime.fromtimestamp(stat.st_mtime)
+    for root, dirs, files in os.walk(path):
+        stat = os.stat(root)
+        mtime = datetime.fromtimestamp(stat.st_mtime)
+        if mtime > latest:
+            latest = mtime
+    return latest
 
-if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        path = sys.argv[1]
-        PATH = os.path.realpath(path)
-    API = ClientAPI(PATH, "nick", host="localhost:5000")
-    print "Starting to watch in %s" % PATH
-    
+def delete_everything(path):
+    os.rmdir(path)
+    os.mkdir(path)
+
+def create_everything(path, api):
+    (dirs, files) = api.get_everything()
+    dirs.sort(key=lambda s: len(s))
+    for dir in dirs:
+        os.mkdir(os.path.join(path, dir))
+    for file in files:
+        fp = os.path.join(path, file['file_path'])
+        open(fp, 'w').write(file['content']) 
+
+def run(path='.', 
+        hostname='localhost:5000', 
+        nosync=False,
+        user='anonymous',
+        password='empty'):
+    """Main observer function"""
+    global API
+    path = os.path.realpath(path)
+    API = ClientAPI(path, user, host=hostname, password=password) 
+    print "Watching in: ", path
     try:
         while True:
             before = take_snapshot()
-            time.sleep(1)
+            time.sleep(2)
             after = take_snapshot()
-            deal_with_diff(before, after)
+
+            last_modified = latest_change(path)
+            upstream_changes = False
+            upstream_latest = API.get_latest()
+            # if the changes on the server are newer we must deal
+            if upstream_latest > last_modified:
+                upstream_changes = True
+                # delete everything, then download everything from the server
+                print "Upstream reports later changes"
+                delete_everything(path)
+                create_everything(path, api)
+                print "Changes synced"
+            if not nosync and not upstream_changes: # sync files...
+                deal_with_diff(before, after)
     except KeyboardInterrupt:
-        print "Killing program"
-        quit()
+        print "Killing Program"
+        sys.exit()
 
 
+if __name__ == '__main__':
+    PATH = '../playground'
+    if len(sys.argv) > 1:
+        path = sys.argv[1]
+        PATH = path
+
+    print "Starting to watch in %s" % PATH
+    run(PATH, 'localhost:5000', False, 'admin')

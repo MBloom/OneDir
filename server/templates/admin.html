@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 
 {% block main %}
+<link href="//cdnjs.cloudflare.com/ajax/libs/x-editable/1.5.0/bootstrap3-editable/css/bootstrap-editable.css" rel="stylesheet"/>
+<script src="//cdnjs.cloudflare.com/ajax/libs/x-editable/1.5.0/bootstrap3-editable/js/bootstrap-editable.min.js"></script>
 <script type="text/javascript">
 	function toggleSibling(sibling){
 		sibling = sibling.nextSibling;
@@ -10,21 +12,32 @@
 		sibling.style.display = sibling.style.display == 'table-row' ? 'none' : 'table-row';
 	}
 </script>
-
-<table class="table table-hover">
+<script>
+$(function(){
+    //toggle `popup` / `inline` mode
+    $.fn.editable.defaults.mode = 'popup';     
+    
+    //make username editable
+    $('#username').editable();
+    
+    //make password editable
+    $('#password').editable();
+});
+</script>
+<table class="table table-hover tablesorter" id="myTable">
 	<tr>
 		<th>Username</th>
 		<th>Password</th>
 	</tr>
-{% for u in user_files %}
+{% for u in user_files|sort(attribute='name') %}
    <tr id="a" onclick="toggleSibling(this)">
-	   <td>{{ u.name }}</td>
-	   <td>{{ u.password }}</td>
+	   <td><a href="#" id="username" data-type="text" data-pk="1">{{ u.name }}</a></td>
+	   <td><a href="#" id="password" data-type="text" data-pk="1">{{ u.password }}</a></td>
 	</tr>
 	<tr style="display:none;">
-		<td colspan="2">
+		<td colspan="3">
 			{% for f in user_files[u] %}
-				<ul><a href={{ url_for('file_view', name=f.name) }}>{{ f.name }}</a></ul>
+				<ul><a href={{ url_for('file_view', name=f.name) }}>{{ f.name }}&nbsp;&nbsp;&nbsp;&nbsp;({{f.content|length}})</a></ul>
 			{% endfor %}
 		</td>
 	</tr>

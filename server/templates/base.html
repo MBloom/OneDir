@@ -11,7 +11,6 @@
         <script src="http://cdnjs.cloudflare.com/ajax/libs/less.js/1.7.0/less.min.js"></script>
         <!-- stylesheet for narrow jumbotron -->
         <link href="http://getbootstrap.com/examples/jumbotron-narrow/jumbotron-narrow.css" rel="stylesheet">
-
         <script type="text/javascript">
         <!--
         function toggle_visibility(id) {
@@ -27,9 +26,15 @@
         <div class="container">
             <div class="header">
                 <ul class="nav nav-pills pull-right">
-                  <li><a href="/">Hi</a></li>
-                  <li><a href={{ url_for('login') }}>Login</a></li>
-                  <li><a href={{ url_for('logout') }}>Logout</a></li>
+                  <li {% if request.path == "/" %}class="active"{% endif %}><a href="/">Home</a></li>
+                  {% if current_user.userClass == "admin" %}
+                  	<li {% if request.path == "/admin" %}class="active"{% endif %}><a href={{ url_for('admin') }}>Admin</a></li>
+                  {%endif%}
+                  {% if current_user.is_active() %}
+                  	<li><a href={{ url_for('logout') }}>Logout</a></li>
+                  {%else%}
+                  <li {% if request.path == "/login" %}class="active"{% endif %}><a href={{ url_for('login') }}>Login</a></li>
+                  {%endif%}
                 </ul>
                 <h3 class="text-muted">OneDir</h3>
             </div>

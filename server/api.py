@@ -3,8 +3,11 @@ import os
 
 from flask.ext.api import FlaskAPI, status
 from flask import g, request
+from sqlalchemy.sql import and_
 
-from models import User, Directory, File, Session, get_dir, get_user
+from models import (User, Directory, File,
+                   Session, get_dir, get_user,
+                   Transaction)
 
 api = FlaskAPI(__name__)
 
@@ -143,20 +146,33 @@ def move_file(username):
     g.db.add(file)
     return "", status.HTTP_202_ACCEPTED
                                 
+@api.route("/api/latest-change/<string:username>")
+def latest(username):
+    latest = g.db.query(Transaction)\
+                 .filter_by(user=username)\
+                 .order_by(Transaction.timestamp.desc())\
+                 .first()
 
-@api.route("/api/<string:username>")
-def all_files(username):
-    """Returns all the active file our user has in their dir"""
-    user = g.db.query(User).get(username)
-    actives = filter(lambda x: x.active, user.files)
-    return [a.to_dict() for a in actives] 
+    if latest is None:
+        # return a change from last century to keep the api simple
+        return {'latest-change': datetime(1941, 12, 7)}
+    return latest.to_dict()
 
-@api.route("/api/<string:username>/files")
-def files(username):
-    """Gets all files for specific user"""
-    user = g.db.query(User).get(username)
-    files = [f.to_dict() for f in user.files]
-    return files
+@api.route("/api/all/<string:username>")
+def everything(username):
+    files = g.db.query(File)\
+                .filter_by(owner=username)\
+                .all()
+
+    dirs = g.db.query(Directory)\
+                .filter(and_(Directory.owner == username,
+                             Directory.path !=  "/")
+                       )\
+                .all()
+
+    files = [f.to_dict() for f in files]
+    dirs  = [d.path for d in dirs]
+    return {'files': files, 'dirs': dirs}
 
 if __name__ == '__main__':
     api.run(debug=True)
