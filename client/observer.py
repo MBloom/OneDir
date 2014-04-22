@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, shutil
 import time
 from datetime import datetime
 from binascii import hexlify
@@ -135,7 +135,7 @@ def latest_change(path):
     return latest
 
 def delete_everything(path):
-    os.rmdir(path)
+    shutil.rmtree(path)
     os.mkdir(path)
 
 def create_everything(path, api):
@@ -144,7 +144,10 @@ def create_everything(path, api):
     for dir in dirs:
         os.mkdir(os.path.join(path, dir))
     for file in files:
-        fp = os.path.join(path, file['file_path'])
+        file_path = file['file_path']
+        if file_path.startswith('/') == 1:
+            file_path = file_path[1:]
+        fp = os.path.join(path, file_path)
         open(fp, 'w').write(file['content']) 
 
 def run(path='.', 
@@ -172,7 +175,7 @@ def run(path='.',
                 # delete everything, then download everything from the server
                 print "Upstream reports later changes"
                 delete_everything(path)
-                create_everything(path, api)
+                create_everything(path, API)
                 print "Changes synced"
             if not nosync and not upstream_changes: # sync files...
                 deal_with_diff(before, after)

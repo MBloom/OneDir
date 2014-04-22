@@ -1,5 +1,7 @@
 #!/usr/bin/python
 import os
+from datetime import datetime
+from functools import wraps
 
 from flask.ext.api import FlaskAPI, status
 from flask import g, request
@@ -23,16 +25,54 @@ def commit_session(resp):
     g.db.commit()
     return resp
 
+def log_transaction(func):
+    @wraps(func)
+    def decorator(*args, **kwargs):
+        res = func(*args, **kwargs)
+        if type(res) == dict or 200 <= res[1] <= 210:
+            LOG = True
+            # Successful txn, log it.
+            _type='DIR'
+            path = request.args.get('path')
+            if 'file' in request.args:
+                p = request.args['path']
+                f = request.args['file']
+                _type = 'FILE'
+                path  = os.path.join(p, f)
+            action = 'DELETE'
+            if 'move' in request.path:
+                action='MOVE'
+            elif request.method == 'POST':
+                action='CREATE'
+            elif request.method == 'PUT':
+                action='UPDATE'
+            else:
+                LOG = False
+            if LOG: 
+                tx = Transaction(user=kwargs['username'],
+                                 type=_type,
+                                 action=action,
+                                 pathname=path,
+                                 ip_address=request.remote_addr  
+                                 )
+                g.db.add(tx)
+        return res
+
+    return decorator
+
+
 @api.route("/api/file/<string:username>", 
            methods=["GET", "POST", "PUT", "DELETE"])
+@log_transaction
 def file(username):
     """All of our api methods for dealing with file changes live within this method"""
     # Must Check credentials for every method
     user = g.db.query(User).get(username)
     # url params
-    path = request.args['path']
-    filename = request.args['file']
-
+    path = request.args.get('path')
+    filename = request.args.get('file')
+    if None in [filename or path]:
+        return "BAD PARAMS", status.HTTP_406_NOT_ACCEPTABLE
     dir = g.db.query(Directory).filter_by(path=path, owner=user.name).first()
     # ensure needed objects exist in the data store
     if user is None:
@@ -69,11 +109,13 @@ def file(username):
         g.db.delete(file)
         return "", status.HTTP_202_ACCEPTED
     else: #GET
+        print 'yes'
         if file is None:
             return "", status.HTTP_404_NOT_FOUND
         return file.to_dict()
              
 @api.route("/api/dir/<string:username>", methods=["POST", "DELETE", "GET"])
+@log_transaction
 def dir(username):
     """Methods for dealing with individual dirs live here"""
     user = g.db.query(User).get(username)
@@ -101,6 +143,7 @@ def dir(username):
 
 
 @api.route("/api/move-dir/<string:username>", methods=["POST"])
+@log_transaction
 def move_dir(username):
     """This method requires to=<path>&from=<path> as url params"""
     to_path = request.args["to"]
@@ -123,6 +166,7 @@ def move_dir(username):
 
 
 @api.route("/api/move-file/<string:username>", methods=["POST"])
+@log_transaction
 def move_file(username):
     """Requires to=<> and from=<> parameters"""
     to_fpath   = request.args["to"]
@@ -153,10 +197,13 @@ def latest(username):
                  .order_by(Transaction.timestamp.desc())\
                  .first()
 
-    if latest is None:
-        # return a change from last century to keep the api simple
-        return {'latest-change': datetime(1941, 12, 7)}
-    return latest.to_dict()
+    out = {'latest-change': datetime(1941, 12, 7)}
+    if latest is not None:
+    # return a change from last century to keep the api simple by default
+        out = latest.to_dict()
+    ts = out['latest-change']
+    out['latest-change'] = ts.strftime('%Y-%m-%d %H:%M:%S.%f') 
+    return out
 
 @api.route("/api/all/<string:username>")
 def everything(username):
@@ -165,10 +212,10 @@ def everything(username):
                 .all()
 
     dirs = g.db.query(Directory)\
-                .filter(and_(Directory.owner == username,
-                             Directory.path !=  "/")
-                       )\
-                .all()
+               .filter(and_(Directory.owner == username,
+                            Directory.path !=  "/")
+                      )\
+               .all()
 
     files = [f.to_dict() for f in files]
     dirs  = [d.path for d in dirs]

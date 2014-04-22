@@ -13,7 +13,7 @@ from flask import g
 
 DB_NAME = 'test.db'
 
-engine = create_engine('sqlite:///%s' % DB_NAME, echo=True)
+engine = create_engine('sqlite:///%s' % DB_NAME, echo=False)
 Base = declarative_base()
 
 # global application level session, which handles all conversations with the db
@@ -67,12 +67,13 @@ class User(Base):
 
 class Directory(Base):
     __tablename__ = 'dirs'
+    __table_args__ = {'sqlite_autoincrement': True}
 
-    inode    = Column(Integer, autoincrement=True, primary_key=True)
-    owner    = Column(String, ForeignKey('users.name'),) #primary_key=True)
-    path     = Column(String, unique=True)
+    inode    = Column(Integer, primary_key=True)
+    owner    = Column(String, ForeignKey('users.name'))
+    path     = Column(String)
 
-    files    = relationship('File', backref="container")
+    files    = relationship('File', backref="directory")
 
     def __init__(self, **kwargs):
         for key, val in kwargs.iteritems():
@@ -101,7 +102,7 @@ class File(Base):
                 'name': self.name,
                 'permissions': self.permissions,
                 'stored_on': self.stored_on,
-                'file_path': os.path.join(self.container.path, self.name)
+                'file_path': os.path.join(self.directory.path, self.name)
               }
         return out
 
@@ -122,13 +123,17 @@ class Transaction(Base):
 
     user        = Column(String, ForeignKey('users.name'), primary_key=True)
     ip_address  = Column(String, primary_key=True)
-    action      = Column(Enum('CREATE', 'DELETE', 'UPDATE'))
+    action      = Column(Enum('CREATE', 'DELETE', 'UPDATE', 'MOVE'))
     timestamp   = Column(DateTime, default=datetime.utcnow, primary_key=True)
     pathname    = Column(String)
     type        = Column(Enum('DIR', 'FILE'))
 
+    def __init__(self, **kwargs):
+        for key, val in kwargs.iteritems():
+            setattr(self, key, val)
+
     def to_dict(self):
-        out = {'latest-changes': str(self.timestamp),
+        out = {'latest-change': self.timestamp,
                 'action': self.action,
                 'pathname': self.pathname
               }

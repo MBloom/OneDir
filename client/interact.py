@@ -2,6 +2,7 @@ import random
 import os
 import json
 from datetime import datetime
+from binascii import unhexlify, hexlify
 
 import requests
 from requests.exceptions import ConnectionError
@@ -137,7 +138,7 @@ class ClientAPI():
         resp = requests.get(url, headers=H)
         assert resp.status_code == 200
         _json = resp.json()
-        str_date = _json.get('latest-changes')
+        str_date = _json.get('latest-change')
         latest_upstream = datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S.%f') 
         return latest_upstream
 
