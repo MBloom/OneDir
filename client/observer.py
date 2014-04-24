@@ -134,9 +134,12 @@ def latest_change(path):
             latest = mtime
     return latest
 
-def delete_everything(path):
-    shutil.rmtree(path)
-    os.mkdir(path)
+def delete_everything(root):
+    top = next(os.walk(root))
+    files = [os.path.join(root, path) for path in top[2]]
+    dirs = [os.path.join(root, path) for path in top[1]]
+    map(lambda path: shutil.rmtree(path), dirs)
+    map(lambda fpath: os.remove(fpath), files)
 
 def create_everything(path, api):
     (dirs, files) = api.get_everything()
@@ -154,7 +157,7 @@ def run(path='.',
         hostname='localhost:5000', 
         nosync=False,
         user='anonymous',
-        password='empty'):
+        password='lolcats'):
     """Main observer function"""
     global API
     path = os.path.realpath(path)

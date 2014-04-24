@@ -44,6 +44,8 @@ class User(Base):
     @classmethod
     def check_password(cls, uname, password):
         actual = get_user(uname)
+        if actual is None:
+            return False
         return actual.password == password
 
     @classmethod

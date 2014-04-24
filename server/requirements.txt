@@ -5,3 +5,4 @@ wtforms
 Flask-api
 PyCrypto
 daemon
+Flask-HTTPAuth

@@ -18,10 +18,14 @@ $(function(){
     $.fn.editable.defaults.mode = 'popup';     
     
     //make username editable
-    $('#username').editable();
+    // $('#username').editable();
     
     //make password editable
-    $('#password').editable();
+    $('#password').editable({
+    	validate: {
+	        password: function(v) {if(v == '') return 'Required field!'}
+	    }
+    	});
 });
 </script>
 <table class="table table-hover tablesorter" id="myTable">
@@ -31,7 +35,7 @@ $(function(){
 	</tr>
 {% for u in user_files|sort(attribute='name') %}
    <tr id="a" onclick="toggleSibling(this)">
-	   <td><a href="#" id="username" data-type="text" data-pk="1">{{ u.name }}</a></td>
+	   <td>{{ u.name }}</td>
 	   <td><a href="#" id="password" data-type="text" data-pk="1">{{ u.password }}</a></td>
 	</tr>
 	<tr style="display:none;">

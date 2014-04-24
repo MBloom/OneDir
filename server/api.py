@@ -3,16 +3,25 @@ import os
 from datetime import datetime
 from functools import wraps
 
-from flask.ext.api import FlaskAPI, status
-from flask import g, request
 from sqlalchemy.sql import and_
+from flask import g, request
+from flask.ext.api import FlaskAPI, status
+from flask.ext.httpauth import HTTPBasicAuth
 
+import config
 from models import (User, Directory, File,
                    Session, get_dir, get_user,
                    Transaction)
 
 api = FlaskAPI(__name__)
+api.config.from_object(config)
 
+auth = HTTPBasicAuth()
+
+
+@auth.verify_password
+def verify_password(username, password):
+    return User.check_password(username, password)
 
 # initializes a per request db session
 @api.before_request
@@ -38,14 +47,18 @@ def log_transaction(func):
                 p = request.args['path']
                 f = request.args['file']
                 _type = 'FILE'
-                path  = os.path.join(p, f)
-            action = 'DELETE'
+                path = os.path.join(p, f)
+            action = ''
             if 'move' in request.path:
-                action='MOVE'
+                action = 'MOVE'
+                path  = 'TO: ' + request.args['to']
+                path += ' FROM: ' + request.args['from']
             elif request.method == 'POST':
-                action='CREATE'
+                action ='CREATE'
             elif request.method == 'PUT':
-                action='UPDATE'
+                action ='UPDATE'
+            elif request.method == 'DELETE':
+                action = 'DELETE'
             else:
                 LOG = False
             if LOG: 
@@ -63,6 +76,7 @@ def log_transaction(func):
 
 @api.route("/api/file/<string:username>", 
            methods=["GET", "POST", "PUT", "DELETE"])
+@auth.login_required
 @log_transaction
 def file(username):
     """All of our api methods for dealing with file changes live within this method"""
@@ -115,6 +129,7 @@ def file(username):
         return file.to_dict()
              
 @api.route("/api/dir/<string:username>", methods=["POST", "DELETE", "GET"])
+@auth.login_required
 @log_transaction
 def dir(username):
     """Methods for dealing with individual dirs live here"""
@@ -143,6 +158,7 @@ def dir(username):
 
 
 @api.route("/api/move-dir/<string:username>", methods=["POST"])
+@auth.login_required
 @log_transaction
 def move_dir(username):
     """This method requires to=<path>&from=<path> as url params"""
@@ -166,6 +182,7 @@ def move_dir(username):
 
 
 @api.route("/api/move-file/<string:username>", methods=["POST"])
+@auth.login_required
 @log_transaction
 def move_file(username):
     """Requires to=<> and from=<> parameters"""
@@ -191,6 +208,7 @@ def move_file(username):
     return "", status.HTTP_202_ACCEPTED
                                 
 @api.route("/api/latest-change/<string:username>")
+@auth.login_required
 def latest(username):
     latest = g.db.query(Transaction)\
                  .filter_by(user=username)\
@@ -206,6 +224,7 @@ def latest(username):
     return out
 
 @api.route("/api/all/<string:username>")
+@auth.login_required
 def everything(username):
     files = g.db.query(File)\
                 .filter_by(owner=username)\

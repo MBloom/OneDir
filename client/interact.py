@@ -1,10 +1,9 @@
-import random
-import os
-import json
+import random, time, os, json, sys
 from datetime import datetime
 from binascii import unhexlify, hexlify
 
 import requests
+from requests.auth import HTTPBasicAuth
 from requests.exceptions import ConnectionError
 
 DEBUG= True
@@ -40,6 +39,9 @@ class ClientAPI():
         self.root = path
         self.user = user
         self.host = host
+        self.auth = HTTPBasicAuth(user, password)
+
+
 
     def file_url(self, file_path):
         path, file = os.path.split(file_path)
@@ -60,7 +62,7 @@ class ClientAPI():
         """Creates a file from the provided dictionary"""
        
         url = self.file_url(file_path)
-        resp = requests.post(url, data=json.dumps(to_send), headers=H)
+        resp = requests.post(url, data=json.dumps(to_send), headers=H, auth=self.auth)
 
         return resp.status_code
 
@@ -68,20 +70,20 @@ class ClientAPI():
     def change_file(self, file_path, to_send):
         """Modifies a file upstream"""
         url = self.file_url(file_path)
-        resp = requests.put(url, data=json.dumps(to_send), headers=H)
+        resp = requests.put(url, data=json.dumps(to_send), headers=H, auth=self.auth)
         return resp.status_code
 
     @path_formulator
     def get_file(self, file_path):
         url = self.file_url(file_path)
-        resp = requests.get(url, headers=H)
+        resp = requests.get(url, headers=H, auth=self.auth)
         print resp.json()
         return resp.status_code
 
     @path_formulator
     def delete_file(self, file_path):
         url = self.file_url(file_path)
-        resp = requests.delete(url, headers=H)
+        resp = requests.delete(url, headers=H, auth=self.auth)
         return resp.status_code
 
     def move_file(self, from_path, to_path):
@@ -95,7 +97,7 @@ class ClientAPI():
                                               )
         if DEBUG:
             print "Url:\n%s\nFrom: %s\nTo: %s" % (url, from_path, to_path)
-        resp = requests.post(url, headers=H)
+        resp = requests.post(url, headers=H, auth=self.auth)
         return resp.status_code
 
     def move_dir(self, from_path, to_path):
@@ -110,32 +112,51 @@ class ClientAPI():
                                           )
         if DEBUG:
             print "Url:\n%s\nFrom: %s\nTo: %s" % (url, from_path, to_path)
-        resp = requests.post(url, headers=H)
+        resp = requests.post(url, headers=H, auth=self.auth)
         return resp.status_code
 
     @path_formulator
     def create_dir(self, path):
         url = self.dir_url(path)
-        resp = requests.post(url, headers=H)
+        resp = requests.post(url, headers=H, auth=self.auth)
         return resp.status_code
 
     @path_formulator
     def get_dir(self, path):
         url = self.dir_url(path)
-        resp = requests.get(url, headers=H)
+        resp = requests.get(url, headers=H, auth=self.auth)
         return resp.status_code
 
     @path_formulator
     def delete_dir(self, path):
         url = self.dir_url(path)
-        resp = requests.delete(url, headers=H)
+        resp = requests.delete(url, headers=H, auth=self.auth)
         return resp.status_code
 
     def get_latest(self):
         url = "http://{}/api/latest-change/{}"\
                                     .format(self.host,
                                             self.user)
-        resp = requests.get(url, headers=H)
+        resp = None
+        success = False
+        first = True
+        while not success:
+            try:
+                resp = requests.get(url, headers=H, auth=self.auth)
+                success = True
+                if not first:
+                    print " Reconnected!"
+            except ConnectionError as e:
+                if first:
+                    sys.stdout.write("Connection to the server down! . . . Retrying ")
+                    first = False
+                else: 
+                    sys.stdout.write('.')
+                sys.stdout.flush()
+                time.sleep(1)   
+        if resp.status_code == 401:
+            print "Bad Login"
+            sys.exit()
         assert resp.status_code == 200
         _json = resp.json()
         str_date = _json.get('latest-change')
@@ -145,7 +166,7 @@ class ClientAPI():
     def get_everything(self):
         """The initial download from the server"""
         url = "http://{}/api/all/{}".format(self.host, self.user)
-        resp = requests.get(url, headers=H)
+        resp = requests.get(url, headers=H, auth=self.auth)
         assert resp.status_code == 200
         _json = resp.json()
         dirs = _json['dirs']
@@ -161,7 +182,7 @@ if __name__ == '__main__':
     file_path = os.path.join(full_path, "T"*random.randint(0,10)+"Bats.txt")
     content = "NaNa"*random.randint(4,50) + " Baaaaaatman!"
 
-    api = ClientAPI('.', 'nick')
+    api = ClientAPI('.', user='admin', password='pass')
     
     from binascii import hexlify
     api.create_file(file_path, {'content': hexlify(content)})
