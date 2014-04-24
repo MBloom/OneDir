@@ -9,7 +9,6 @@ from watchdog.utils.dirsnapshot import DirectorySnapshot, DirectorySnapshotDiff
 
 from interact import ClientAPI
 
-PATH = os.path.realpath('.')
 API = None
 
 
@@ -111,8 +110,8 @@ def commit_changes(out_set):
             pass
 
 
-def take_snapshot():
-    snapshot = DirectorySnapshot(PATH, recursive=True)
+def take_snapshot(path):
+    snapshot = DirectorySnapshot(path, recursive=True)
     return snapshot
 
 
@@ -134,18 +133,26 @@ def latest_change(path):
             latest = mtime
     return latest
 
-def delete_everything(root):
+def delete_everything(root, everything):
     top = next(os.walk(root))
     files = [os.path.join(root, path) for path in top[2]]
     dirs = [os.path.join(root, path) for path in top[1]]
-    map(lambda path: shutil.rmtree(path), dirs)
-    map(lambda fpath: os.remove(fpath), files)
+    for fpath in files:
+        if fpath in everything:
+            os.remove(fpath)
+    for dir_p in dirs:
+        if dir_p in everything:
+            shutil.rmtree(dir_p)
 
 def create_everything(path, api):
     (dirs, files) = api.get_everything()
     dirs.sort(key=lambda s: len(s))
     for dir in dirs:
-        os.mkdir(os.path.join(path, dir))
+        try:
+            os.mkdir(os.path.join(path, dir))
+        except OSError as e:
+            if not e.errno == 17:
+                raise e 
     for file in files:
         file_path = file['file_path']
         if file_path.startswith('/') == 1:
@@ -163,11 +170,12 @@ def run(path='.',
     path = os.path.realpath(path)
     API = ClientAPI(path, user, host=hostname, password=password) 
     print "Watching in: ", path
+    create_everything(path, API)
     try:
         while True:
-            before = take_snapshot()
+            before = take_snapshot(path)
             time.sleep(2)
-            after = take_snapshot()
+            after = take_snapshot(path)
 
             last_modified = latest_change(path)
             upstream_changes = False
@@ -177,7 +185,8 @@ def run(path='.',
                 upstream_changes = True
                 # delete everything, then download everything from the server
                 print "Upstream reports later changes"
-                delete_everything(path)
+                everything = API.list_everything()
+                delete_everything(path, everything)
                 create_everything(path, API)
                 print "Changes synced"
             if not nosync and not upstream_changes: # sync files...
@@ -188,10 +197,9 @@ def run(path='.',
 
 
 if __name__ == '__main__':
-    PATH = '../playground'
+    path = '../playground'
     if len(sys.argv) > 1:
         path = sys.argv[1]
-        PATH = path
 
-    print "Starting to watch in %s" % PATH
-    run(PATH, 'localhost:5000', False, 'admin')
+    print "Starting to watch in %s" % path
+    run(path, 'localhost:5000', False, 'admin')

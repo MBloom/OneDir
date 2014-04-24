@@ -164,7 +164,7 @@ class ClientAPI():
         return latest_upstream
 
     def get_everything(self):
-        """The initial download from the server"""
+        """The download of all the active content from the server"""
         url = "http://{}/api/all/{}".format(self.host, self.user)
         resp = requests.get(url, headers=H, auth=self.auth)
         assert resp.status_code == 200
@@ -175,8 +175,14 @@ class ClientAPI():
             d['content'] = unhexlify(d['content'])
         return (dirs, files)
 
-        
 
+    def list_everything(self):
+        """Lists all the dirs that the server has touched at somepoint"""
+        url = "http://{}/api/everything/{}".format(self.host, self.user)
+        resp = requests.get(url, headers=H, auth=self.auth)
+        everything = resp.json().get('everything')
+        return everything
+        
 if __name__ == '__main__':
     full_path = os.path.realpath('.')
     file_path = os.path.join(full_path, "T"*random.randint(0,10)+"Bats.txt")

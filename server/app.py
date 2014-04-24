@@ -29,7 +29,7 @@ def load_user(uname):
     # print "yay"
     return models.get_user(uname)
 
-@app.route('/create', methods=["GET", "POST"])
+@app.route('/create/', methods=["GET", "POST"])
 def create_user():
     form = AccountForm(request.form)
     if form.validate():
@@ -50,7 +50,20 @@ def create_user():
     print form.data
     return render_template("create.html", form=form, message=None)
 
-@app.route('/login', methods=["GET", "POST"])
+@app.route('/remove_user/', methods=["GET", "POST"])
+def remove_user():
+    form = RemovalForm(request.form)
+    if form.validate():
+        user_toRemove = models.get_user(form.data['username'])
+        if user != None:
+            message = "Must enter a user to remove."
+            return render_template("create.html", form=form, message=message)
+        else:
+            g.db.remove(user_toRemove)
+            return redirect(url_for("home"))
+    return render_template("remove_user.html", form=form, message=None)
+
+@app.route('/login/', methods=["GET", "POST"])
 def login():
     form = LoginForm(request.form)
     if form.validate():
@@ -62,12 +75,12 @@ def login():
     return render_template("login.html", form=form)
 
 
-@app.route('/logout')
+@app.route('/logout/')
 def logout():
     logout_user()
     return redirect(url_for("home"))
 
-@app.route('/admin')
+@app.route('/admin/')
 @login_required
 def admin():
     num_files = len(g.db.query(File).all())

@@ -51,8 +51,7 @@ def log_transaction(func):
             action = ''
             if 'move' in request.path:
                 action = 'MOVE'
-                path  = 'TO: ' + request.args['to']
-                path += ' FROM: ' + request.args['from']
+                path  = request.args['from']
             elif request.method == 'POST':
                 action ='CREATE'
             elif request.method == 'PUT':
@@ -225,7 +224,7 @@ def latest(username):
 
 @api.route("/api/all/<string:username>")
 @auth.login_required
-def everything(username):
+def current_dir(username):
     files = g.db.query(File)\
                 .filter_by(owner=username)\
                 .all()
@@ -239,6 +238,24 @@ def everything(username):
     files = [f.to_dict() for f in files]
     dirs  = [d.path for d in dirs]
     return {'files': files, 'dirs': dirs}
+
+@api.route("/api/everything/<string:username>")
+def list_history(username):
+    txns = g.db.query(Transaction)\
+                  .filter_by(user=username).all()
+    old_paths = [tx.pathname for tx in txns]
+
+    files = g.db.query(File).filter_by(owner=username).all()
+    file_paths = [file.to_dict()['file_path'] for file in files] 
+    dirs = g.db.query(Directory)\
+               .filter(and_(Directory.owner == username,
+                            Directory.path !=  "/")
+                      )\
+               .all()
+    dir_paths = [dir.path for dir in dirs]
+
+    everything = set(file_paths + dir_paths + old_paths)
+    return {'everything': list(everything) }
 
 if __name__ == '__main__':
     api.run(debug=True)

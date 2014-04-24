@@ -14,6 +14,7 @@
 </script>
 <script>
 $(function(){
+	// <a href="#" id="myID" data-type="text" data-pk="1"></a>
     //toggle `popup` / `inline` mode
     $.fn.editable.defaults.mode = 'popup';     
     
@@ -22,21 +23,22 @@ $(function(){
     
     //make password editable
     $('#password').editable({
-    	validate: {
-	        password: function(v) {if(v == '') return 'Required field!'}
-	    }
+    	validate: function(value) {
+		  if($.trim(value).length <= 2) 
+		    return 'Must contain at least 3 characters';
+		}
     	});
 });
 </script>
 <table class="table table-hover tablesorter" id="myTable">
 	<tr>
 		<th>Username</th>
-		<th>Password</th>
+		<th>User Class</th>
 	</tr>
 {% for u in user_files|sort(attribute='name') %}
    <tr id="a" onclick="toggleSibling(this)">
 	   <td>{{ u.name }}</td>
-	   <td><a href="#" id="password" data-type="text" data-pk="1">{{ u.password }}</a></td>
+	   <td>{{ u.userClass }}</a></td>
 	</tr>
 	<tr style="display:none;">
 		<td colspan="3">
