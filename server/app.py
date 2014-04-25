@@ -3,7 +3,7 @@ from flask.ext.login import LoginManager, login_required, login_user, logout_use
 
 import config, models
 from models import Session, User, File
-from forms import LoginForm, AccountForm
+from forms import LoginForm, AccountForm, RemovalForm
 import collections
 
 app = Flask(__name__, static_folder='static')
@@ -52,16 +52,22 @@ def create_user():
 
 @app.route('/remove_user/', methods=["GET", "POST"])
 def remove_user():
+    all_users = g.db.query(User).all()
     form = RemovalForm(request.form)
     if form.validate():
         user_toRemove = models.get_user(form.data['username'])
-        if user != None:
-            message = "Must enter a user to remove."
-            return render_template("create.html", form=form, message=message)
+        if user_toRemove == None:
+            message = "User does not exist."
+            return render_template("remove_user.html", all_users=all_users, form=form, message=message)
         else:
-            g.db.remove(user_toRemove)
-            return redirect(url_for("home"))
-    return render_template("remove_user.html", form=form, message=None)
+            g.db.delete(user_toRemove)
+            return redirect(url_for("admin"))
+    # admin authentication
+    admins = g.db.query(User).filter_by(userClass="admin").all()
+    if current_user in admins:
+        return render_template("remove_user.html", all_users=all_users, form=form, message=None)
+    else:
+        abort(404)
 
 @app.route('/login/', methods=["GET", "POST"])
 def login():
@@ -88,10 +94,9 @@ def admin():
     users = g.db.query(User).all()
     for u in users:
         user_files[u] = g.db.query(File).filter_by(owner=u.name).all()
-    return render_template('admin.html', user_files=user_files, num_files=num_files)
     # admin authentication
-    admins = g.db.query(User).filter_by(userClass="admin")
-    if current_user.get_id() in admins:
+    admins = g.db.query(User).filter_by(userClass="admin").all()
+    if current_user in admins:
         return render_template('admin.html', user_files=user_files, num_files=num_files)
     else:
         abort(404)

@@ -118,7 +118,9 @@ class File(Base):
         if "content" in kwargs:
             self.content = unhexlify(self.content)
         self.stored_on = datetime.now()
-        # self.size = os.path.getsize(???)
+
+    def size(self):
+        return len(bytearray(self.content))
 
 class Transaction(Base):
     __tablename__ = 'txns'

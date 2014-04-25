@@ -15,6 +15,8 @@ python client/observer.py directoryname
 
 This starts a polling python script that watches for changes in directoryname. It will attempt to reflect those changes in the api running on localhost.
 
+To run the client user driver.py
+
 ####Server
 
 

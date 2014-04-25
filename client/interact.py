@@ -164,7 +164,7 @@ class ClientAPI():
         return latest_upstream
 
     def get_everything(self):
-        """The download of all the active content from the server"""
+        """downloads of all the active content from the server"""
         url = "http://{}/api/all/{}".format(self.host, self.user)
         resp = requests.get(url, headers=H, auth=self.auth)
         assert resp.status_code == 200

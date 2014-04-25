@@ -6,7 +6,8 @@
 	<h2>Please <a href={{ url_for('login') }}>login</a> to access your files</h2>
 {% else %}
 	<h1>Welcome, {{ uname }}</h1>
-        <p class="lead">Here is a list of all your files that have been uploaded to the OneDir server. To view the contents of any file simple click on it's name below.</p>
+        <p class="lead">Here is a list of all your files that have been uploaded to the OneDir server.To view the contents of any file simply click on it's name below.<br><br>
+        To save any of your files right click and 'Save as...'</p>
 </div>
 <div>
 	{% if files|length == 0 %}

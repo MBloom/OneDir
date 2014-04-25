@@ -1,6 +1,6 @@
 import os, sys, shutil
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from binascii import hexlify
 
 from watchdog.observers.polling import PollingObserver
@@ -68,7 +68,9 @@ def make_change_set(diff):
 
 def file_dict(path):
     """This function will returns the parameters a file obj in our database needs"""
-    content = hexlify(open(path, 'rb').read())
+    f = open(path, 'rb')
+    content = hexlify(f.read())
+    f.close()
     size = os.path.getsize(path)
     to_send = {'content': content,
                'permissions': '0600',
@@ -131,12 +133,34 @@ def latest_change(path):
         mtime = datetime.fromtimestamp(stat.st_mtime)
         if mtime > latest:
             latest = mtime
+        for filename in files:
+            fpath = os.path.join(os.path.join(path, root), filename)
+            f = open(fpath)
+            fstat = os.fstat(f.fileno())
+            f.close()
+            td = datetime.fromtimestamp(fstat.st_mtime)
+            if td > latest:
+                latest = td
     return latest
 
 def delete_everything(root, everything):
+    # tiny little hack to change the system modified time
+    tmpp = os.path.join(root, '.onedir')
+    tmpf = open(tmpp, 'w')
+    tmpf.write('hehehe')
+    tmpf.close()
+    os.remove(tmpp)
+    # huzzah
+
     top = next(os.walk(root))
     files = [os.path.join(root, path) for path in top[2]]
     dirs = [os.path.join(root, path) for path in top[1]]
+    for i in range(len(everything)):
+        path = everything[i]
+        if path.startswith('/'):
+            path = path[1:]
+        path = os.path.join(root, path)
+        everything[i] = path
     for fpath in files:
         if fpath in everything:
             os.remove(fpath)
@@ -158,7 +182,9 @@ def create_everything(path, api):
         if file_path.startswith('/') == 1:
             file_path = file_path[1:]
         fp = os.path.join(path, file_path)
-        open(fp, 'w').write(file['content']) 
+        f = open(fp, 'w')
+        f.write(file['content']) 
+        f.close()
 
 def run(path='.', 
         hostname='localhost:5000', 
@@ -174,7 +200,8 @@ def run(path='.',
     try:
         while True:
             before = take_snapshot(path)
-            time.sleep(2)
+            wait = 1
+            time.sleep(wait)
             after = take_snapshot(path)
 
             last_modified = latest_change(path)
