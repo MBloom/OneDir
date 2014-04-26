@@ -3,12 +3,10 @@
     <head>
         <title>{% block title %}{% endblock title %}</title>
         <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.0/jquery.js"></script>
-        <link href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet" />
+
+        <!-- The custom colorscheme is now baked into bootstrap -->
+        <link href="/static/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
         <script src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-        <!-- custom colorscheme -->
-        <link href="/static/lavish-bootstrap.css" rel="stylesheet">
-        <link rel="stylesheet/less" href="/static/variables.less" media="all" />
-        <script src="http://cdnjs.cloudflare.com/ajax/libs/less.js/1.7.0/less.min.js"></script>
         <!-- stylesheet for narrow jumbotron -->
         <link href="http://getbootstrap.com/examples/jumbotron-narrow/jumbotron-narrow.css" rel="stylesheet">
         <script type="text/javascript">
@@ -19,6 +17,10 @@
         }
         //-->
         </script>
+
+        <!-- Our Stylesheet -->
+        <link rel="stylesheet" href="/static/site.css" />
+
         {% block head %}
         {% endblock head %}
     </head>

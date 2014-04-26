@@ -16,6 +16,7 @@ from models import (User, Directory, File,
 api = FlaskAPI(__name__)
 api.config.from_object(config)
 
+
 auth = HTTPBasicAuth()
 
 

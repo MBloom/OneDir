@@ -164,7 +164,7 @@ if __name__ == '__main__':
             session.add(f)
 
             # create a txn for the admin
-            tx = Transaction()
+            tx = Transaction(type="FILE", action="CREATE")
             tx.user = admin.name
             tx.ip_address = 'localhost:53434'
             tx.pathname = fname

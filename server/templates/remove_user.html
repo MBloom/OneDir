@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block main %}
+<h4>Enter the Username you would like to remove.</h4>
+<!-- Text input-->
+<script type="text/javascript">
+    var user_list = [];
+    {% for u in all_users %}
+    user_list.pust(u.name);
+    {% endfor %}
+</script>
+<script type="text/javascript">
+    $(function() {
+        $( "#username" ).autocomplete({
+            source: user_list
+        });
+    });
+</script>
+{% if message != None %}
+<div class="alert alert-danger alert-dismissable">
+  <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+  <strong>Warning!</strong> {{message}}
+</div>
+{% endif %}
+<form method=post action={{ url_for('remove_user') }}>
+</fieldset>
+<div class="control-group" style="padding-bottom:10px;">
+  <div class="controls">
+    <input id="username" name="username" type="text" placeholder="Username" class="input-xlarge">
+  </div>
+</div>
+
+<!-- Button -->
+<div class="control-group">
+  <div class="controls">
+    <button id="singlebutton" name="singlebutton" class="btn btn-sm btn-danger">Remove</button>
+  </div>
+</div>
+
+</fieldset>
+</form>
+
+{% if error %} {{ error }} {% endif %}
+{% endblock main %}

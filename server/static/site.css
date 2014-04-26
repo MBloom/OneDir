@@ -1,0 +1,15 @@
+.centa {
+    position: absolute;
+    top:    30%;
+    left:   35%;
+}
+
+.subtext {
+    padding: 10px 0 15px 0;
+    border-bottom: solid 1px #e3e3e3;
+    margin-bottom: 30px;
+}
+
+.glyphicon {
+    font-size: 3em;
+}

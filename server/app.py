@@ -1,13 +1,16 @@
-from flask import Flask, request, g, render_template, redirect, abort, url_for, Response
+import collections
+
+from flask import Flask, request, g, render_template, redirect, abort, url_for, Response, Blueprint
 from flask.ext.login import LoginManager, login_required, login_user, logout_user, current_user
 
 import config, models
-from models import Session, User, File
+from models import Session, User, File, Transaction
 from forms import LoginForm, AccountForm, RemovalForm
-import collections
 
-app = Flask(__name__, static_folder='static')
+app = Flask(__name__)
+
 app.config.from_object(config)
+
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -116,6 +119,40 @@ def file_view(name):
     if file is None:
 		abort(404)
     return resp
+
+@app.route('/log/<string:user>')
+@login_required
+def log_view(user):
+    txns = g.db.query(Transaction).filter_by(user=user).all()
+    txns.sort(key=lambda x: x.timestamp, reverse=True)
+    return render_template('logs.html', txns=txns)
+
+@app.route('/upload/<string:user>', methods=["POST"])
+@login_required
+def file_upload(user):
+    
+    _file = request.files['file']
+    cont = ''
+    for d in _file.stream:
+        cont += d
+    from binascii import hexlify
+    cont = hexlify(cont)
+    
+    name = _file.filename
+    db_f = g.db.query(File).filter_by(owner=user, name=name, dir='/').first()
+    if db_f is not None:
+        return "File already exists", 409
+
+    new_file = File(name=name, owner=user, content=cont, dir='/')
+    tx = Transaction(user=user, 
+                     action="CREATE", 
+                     type="FILE", 
+                     pathname=name,
+                     ip_address=request.remote_addr)
+    g.db.add(new_file)
+    g.db.add(tx)
+    return "Success"
+
 
 if __name__ == '__main__':
     app.run('0.0.0.0', port=19199,  debug=True)
