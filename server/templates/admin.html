@@ -29,12 +29,6 @@
 			}
 	    	});
 	});
-
-	$(function rmv_file(filename){
-		$.post("",{
-
-		})
-	});
 </script>
 <table class="table table-hover tablesorter" id="myTable">
 	<tr>
@@ -52,7 +46,15 @@
 			<ul><em>No files exist for this user.</em></ul>
 			{%else%}
 			{% for f in user_files[u] %}
-				<ul><span class="glyphicon glyphicon-remove" id={{f.name}} style="width:3%"></span>
+				<ul>
+				<form id="admin_files" method=post action={{ url_for('file_delete') }}>
+					<input type="hidden" name="filename" value={{f.name}}>
+					<input type="hidden" name="owner" value={{f.owner}}>
+					<input type="hidden" name="path" value={{f.dir}}>
+					<button type=send class="admin_delete delete">
+						<span class="glyphicon glyphicon-remove"} style="width:3%"></span>
+					</button>
+				</form>
 				<a href={{ url_for('file_view', name=f.name) }} style="width:40%"> {{ f.name }}</a>
 				({{f.size()}})
 				</ul>

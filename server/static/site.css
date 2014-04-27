@@ -13,3 +13,17 @@
 .glyphicon {
     font-size: 3em;
 }
+
+button.delete{
+	background: none;
+	border: none;
+	margin-left: -25px;"
+}
+
+button.admin_delete{
+    font-size:5px;
+}
+
+#admin_files{
+    display: inline;
+}

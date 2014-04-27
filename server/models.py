@@ -23,6 +23,11 @@ Session = sessionmaker(bind=engine)
 def get_user(name):
     return g.db.query(User).filter_by(name=name).first()
 
+def get_file(name, path, owner):
+    if path == '':
+        path = '/'
+    return g.db.query(File).filter_by(name=name, dir=path, owner=owner).first()
+
 def get_dir(name, path):
     if path == '':
         path = '/'
@@ -158,7 +163,7 @@ if __name__ == '__main__':
     for fname in os.listdir(path):
         try:
             d = hexlify(open(os.path.join(path,fname)).read())
-            f = File(name=fname, content=d) 
+            f = File(name=fname, content=d, dir=root.path) 
             root.files.append(f)
             admin.files.append(f)
             session.add(f)

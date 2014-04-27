@@ -44,7 +44,7 @@ def log_transaction(func):
             # Successful txn, log it.
             _type='DIR'
             path = request.args.get('path')
-            if 'file' in request.args:
+            if 'file' in request.args or 'file' in request.path:
                 p = request.args['path']
                 f = request.args['file']
                 _type = 'FILE'
@@ -236,7 +236,8 @@ def current_dir(username):
                       )\
                .all()
 
-    files = [f.to_dict() for f in files]
+    if files is not None:
+        files = [f.to_dict() for f in files]
     dirs  = [d.path for d in dirs]
     return {'files': files, 'dirs': dirs}
 

@@ -5,7 +5,7 @@ from flask.ext.login import LoginManager, login_required, login_user, logout_use
 
 import config, models
 from models import Session, User, File, Transaction
-from forms import LoginForm, AccountForm, RemovalForm
+from forms import LoginForm, AccountForm, RemovalForm, AccountRemoval
 
 app = Flask(__name__)
 
@@ -56,13 +56,16 @@ def create_user():
 @app.route('/remove_user/', methods=["GET", "POST"])
 def remove_user():
     all_users = g.db.query(User).all()
-    form = RemovalForm(request.form)
+    form = AccountRemoval(request.form)
+    print form.validate()
+    print form.data
     if form.validate():
         user_toRemove = models.get_user(form.data['username'])
         if user_toRemove == None:
             message = "User does not exist."
             return render_template("remove_user.html", all_users=all_users, form=form, message=message)
         else:
+            map(lambda f: g.db.delete(f), user_toRemove.files)
             g.db.delete(user_toRemove)
             return redirect(url_for("admin"))
     # admin authentication
@@ -153,6 +156,23 @@ def file_upload(user):
     g.db.add(tx)
     return "Success"
 
+@app.route('/delete/', methods=["POST"])
+@login_required
+def file_delete():
+    form = RemovalForm(request.form)
+    if form.validate():
+        file_toRemove = models.get_file(form.data['filename'], form.data['path'], form.data['owner'])
+        if file_toRemove == None:
+            print "No file exists."
+        else:
+            tx = Transaction(user=current_user.name, 
+                     action="DELETE", 
+                     type="FILE", 
+                     pathname=file_toRemove.name,
+                     ip_address=request.remote_addr)
+            g.db.add(tx)
+            g.db.delete(file_toRemove)
+    return redirect(request.referrer)
 
 if __name__ == '__main__':
     app.run('0.0.0.0', port=19199,  debug=True)
