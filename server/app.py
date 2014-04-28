@@ -113,8 +113,10 @@ def login():
         user = models.get_user(form.data['username'])
         if user != None and User.check_password(form.data['username'], form.data['password']):
             login_user(user)
-	    return redirect(request.args.get("next") or url_for("home"))
-    return render_template("login.html", form=form)
+            return redirect(request.args.get("next") or url_for("home"))
+        else:
+            return render_template("login.html", form=form, message="Username/password do not match.")
+    return render_template("login.html", form=form, message=None)
 
 
 @app.route('/logout/')

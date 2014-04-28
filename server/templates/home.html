@@ -4,22 +4,13 @@
 <script src="http://cdnjs.cloudflare.com/ajax/libs/dropzone/3.8.4/dropzone.min.js"></script>
 <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/dropzone/3.8.4/css/dropzone.css" />
 <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/dropzone/3.8.4/css/basic.css" /> 
-
+<script src="http://code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
 {% endblock head %}
 
 {% block main %}
 <!-- Text input-->
-<script type="text/javascript">
-    var file_list = [];
-    {% for f in files %}
-    file_list.push("{{ f.name }}");
-    {% endfor %}
-    $(function() {
-        $( "#file_search" ).autocomplete({
-            source: file_list
-        });
-    });
-</script>
+
 <div class = "jumbotron">
     {% if uname == None %}
     <h2>Please <a href={{ url_for('login') }}>login</a> to access your files</h2>
@@ -30,7 +21,7 @@
         <div class="input-group">
           <input id="file_search" name="file_search" type="text" placeholder"Filename..." class="form-control">
           <span class="input-group-btn">
-            <button id="jumbo-btn" class="btn" type="button">Open</button>
+            <button id="jumbo-btn" class="btn goBtn" type="button">Open</button>
           </span>
         </div>
     </div>
@@ -77,4 +68,23 @@
 
     {% endif %}
 </div>
+<script type="text/javascript">
+    var file_list = [ 
+    {% for f in files %}
+     "{{ f.name }}",
+    {% endfor %}
+    ];
+    $(function() {
+        $( "#file_search" ).autocomplete({
+            source: file_list
+        });
+    });
+    $('.goBtn').on('click', function(e){
+         var file_name = $('#file_search').val(); 
+         if (!(file_name === '')) {
+             url = '/file/' + file_name;
+             window.open(url, '_self');
+         }
+    });
+</script>
 {% endblock main %}

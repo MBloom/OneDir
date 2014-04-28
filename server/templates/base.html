@@ -38,8 +38,8 @@
                     </ul>
                   </li>
                   {%endif%}
-                  <li {% if request.path == "/info/" %}class="active"{% endif %}><a href={{ url_for('info') }}>Account</a></li>
                   {% if current_user.is_active() %}
+                  <li {% if request.path == "/info/" %}class="active"{% endif %}><a href={{ url_for('info') }}>Account</a></li>
                   <li><a href={{ url_for('logout') }}>Logout</a></li>
                   {%else%}
                   <li {% if request.path == "/login/" %}class="active"{% endif %}><a href={{ url_for('login') }}>Login</a></li>

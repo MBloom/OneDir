@@ -31,7 +31,13 @@
 	<div class="content">
 	<div class="row">
 	    <div class="span12">
-	        <form method=post action={{ url_for('login') }}>
+		    {% if message != None %}
+			<div class="alert alert-danger alert-dismissable">
+			  <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+			  <strong>Warning!</strong> {{message}}
+			</div>
+			{% endif %}
+		    <form method=post action={{ url_for('login') }}>
 	            <fieldset>
 				    <h3>Login</h3>
 				    <div class="control-group" style="padding-bottom:10px;">
