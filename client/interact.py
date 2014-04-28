@@ -64,27 +64,30 @@ class ClientAPI():
         url = self.file_url(file_path)
         resp = requests.post(url, data=json.dumps(to_send), headers=H, auth=self.auth)
 
-        return resp.status_code
+        if resp.status_code > 210: return None
+        return resp.json()['txid']
 
     @path_formulator
     def change_file(self, file_path, to_send):
         """Modifies a file upstream"""
         url = self.file_url(file_path)
         resp = requests.put(url, data=json.dumps(to_send), headers=H, auth=self.auth)
-        return resp.status_code
+        if resp.status_code > 210: return None
+        return resp.json()['txid']
 
     @path_formulator
     def get_file(self, file_path):
         url = self.file_url(file_path)
         resp = requests.get(url, headers=H, auth=self.auth)
-        print resp.json()
-        return resp.status_code
+        if resp.status_code > 210: return None
+        return resp.json()['txid']
 
     @path_formulator
     def delete_file(self, file_path):
         url = self.file_url(file_path)
         resp = requests.delete(url, headers=H, auth=self.auth)
-        return resp.status_code
+        if resp.status_code > 210: return None
+        return resp.json()['txid']
 
     def move_file(self, from_path, to_path):
         from_path = relpath(from_path, self.root)
@@ -98,7 +101,8 @@ class ClientAPI():
         if DEBUG:
             print "Url:\n%s\nFrom: %s\nTo: %s" % (url, from_path, to_path)
         resp = requests.post(url, headers=H, auth=self.auth)
-        return resp.status_code
+        if resp.status_code > 210: return None
+        return resp.json()['txid']
 
     def move_dir(self, from_path, to_path):
         from_path = relpath(from_path, self.root)
@@ -113,27 +117,31 @@ class ClientAPI():
         if DEBUG:
             print "Url:\n%s\nFrom: %s\nTo: %s" % (url, from_path, to_path)
         resp = requests.post(url, headers=H, auth=self.auth)
-        return resp.status_code
+        if resp.status_code > 210: return None
+        return resp.json()['txid']
 
     @path_formulator
     def create_dir(self, path):
         url = self.dir_url(path)
         resp = requests.post(url, headers=H, auth=self.auth)
-        return resp.status_code
+        if resp.status_code > 210: return None
+        return resp.json()['txid']
 
     @path_formulator
     def get_dir(self, path):
         url = self.dir_url(path)
         resp = requests.get(url, headers=H, auth=self.auth)
-        return resp.status_code
+        if resp.status_code > 210: return None
+        return resp.json()['txid']
 
     @path_formulator
     def delete_dir(self, path):
         url = self.dir_url(path)
         resp = requests.delete(url, headers=H, auth=self.auth)
-        return resp.status_code
+        if resp.status_code > 210: return None
+        return resp.json()['txid']
 
-    def get_latest(self):
+    def get_latest_txid(self):
         url = "http://{}/api/latest-change/{}"\
                                     .format(self.host,
                                             self.user)
@@ -159,9 +167,8 @@ class ClientAPI():
             sys.exit()
         assert resp.status_code == 200
         _json = resp.json()
-        str_date = _json.get('latest-change')
-        latest_upstream = datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S.%f') 
-        return latest_upstream
+        txid = _json.get('latest-change')
+        return txid
 
     def get_everything(self):
         """downloads of all the active content from the server"""

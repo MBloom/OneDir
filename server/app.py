@@ -1,10 +1,11 @@
 import collections
+import os
 
 from flask import Flask, request, g, render_template, redirect, abort, url_for, Response, Blueprint
 from flask.ext.login import LoginManager, login_required, login_user, logout_user, current_user
 
 import config, models
-from models import Session, User, File, Transaction
+from models import Session, User, File, Transaction, Directory
 from forms import LoginForm, AccountForm, RemovalForm, AccountRemoval, UserPwdChange, AdminPwdChange
 
 app = Flask(__name__)
@@ -47,6 +48,9 @@ def create_user():
             new_user = User(name=form.data['username'],
                             password=form.data['password'],
                             userClass="scrub")
+            new_home_dir = Directory(owner=new_user.name,
+                                     path='/')
+            g.db.add(new_home_dir)
             g.db.add(new_user)
             login_user(new_user)
             return redirect(url_for("home"))
@@ -168,15 +172,16 @@ def file_upload(user):
     cont = hexlify(cont)
     
     name = _file.filename
-    db_f = g.db.query(File).filter_by(owner=user, name=name, dir='/').first()
+    root = models.get_dir(name=user, path='/')
+    db_f = g.db.query(File).filter_by(owner=user, name=name, dir=root.inode).first()
     if db_f is not None:
         return "File already exists", 409
 
-    new_file = File(name=name, owner=user, content=cont, dir='/')
+    new_file = File(name=name, owner=user, content=cont, dir=root.inode)
     tx = Transaction(user=user, 
                      action="CREATE", 
                      type="FILE", 
-                     pathname=name,
+                     pathname=new_file.pathname(),
                      ip_address=request.remote_addr)
     g.db.add(new_file)
     g.db.add(tx)
@@ -194,7 +199,7 @@ def file_delete():
             tx = Transaction(user=current_user.name, 
                      action="DELETE", 
                      type="FILE", 
-                     pathname=file_toRemove.name,
+                     pathname=file_toRemove.pathname(),
                      ip_address=request.remote_addr)
             g.db.add(tx)
             g.db.delete(file_toRemove)

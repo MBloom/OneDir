@@ -45,7 +45,7 @@
     {% for file in files %}
     <div align="center" class="row">
         <div class="col-md-4">
-            <p style="font-size:18pt;"><a href={{ url_for('file_view', name=file.name) }}>{{ file.name }}</a></p>
+            <p style="font-size:18pt;"><a href={{ url_for('file_view', name=file.name) }}>{{ file.pathname() }}</a></p>
         </div>
         <div class="col-md-4"></div>
         <div class="col-md-1">

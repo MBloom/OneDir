@@ -21,12 +21,11 @@ Session = sessionmaker(bind=engine)
 
 #returns a single user from the db
 def get_user(name):
-    return g.db.query(User).filter_by(name=name).first()
+    user = g.db.query(User).filter_by(name=name).first()
+    return user 
 
-def get_file(name, path, owner):
-    if path == '':
-        path = '/'
-    return g.db.query(File).filter_by(name=name, dir=path, owner=owner).first()
+def get_file(name, inode, owner):
+    return g.db.query(File).filter_by(name=name, dir=inode, owner=owner).first()
 
 def get_dir(name, path):
     if path == '':
@@ -47,8 +46,8 @@ class User(Base):
         return "<User(name={}, pw={}, class={})>".format(self.name, self.password, self.userClass)
 
     @classmethod
-    def check_password(cls, uname, password):
-        actual = get_user(uname)
+    def check_password(cls, username, password):
+        actual = get_user(username)
         if actual is None:
             return False
         return actual.password == password
@@ -109,7 +108,7 @@ class File(Base):
                 'name': self.name,
                 'permissions': self.permissions,
                 'stored_on': self.stored_on,
-                'file_path': os.path.join('/', self.name)
+                'file_path': os.path.join(self.directory.path, self.name)
               }
         return out
 
@@ -123,6 +122,9 @@ class File(Base):
         if "content" in kwargs:
             self.content = unhexlify(self.content)
         self.stored_on = datetime.now()
+
+    def pathname(self):
+        return os.path.join(self.directory.path, self.name)
 
     def size(self):
         return len(bytearray(self.content))
@@ -141,12 +143,21 @@ class Transaction(Base):
         for key, val in kwargs.iteritems():
             setattr(self, key, val)
 
+
     def to_dict(self):
         out = {'latest-change': self.timestamp,
                 'action': self.action,
                 'pathname': self.pathname
               }
         return out
+
+    def hash(self):
+        ho = sha256(self.user)
+        ho.update(self.ip_address)
+        ho.update(self.action)
+        ho.update(self.type)
+        ho.update(self.pathname)
+        return ho.hexdigest()
 
 
 if __name__ == '__main__':

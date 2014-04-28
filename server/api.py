@@ -42,9 +42,10 @@ def log_transaction(func):
         if type(res) == dict or 200 <= res[1] <= 210:
             LOG = True
             # Successful txn, log it.
+            print "yes"
             _type='DIR'
-            path = request.args.get('path')
-            if 'file' in request.args or 'file' in request.path:
+            path = request.args.get('path', None)
+            if 'file' in request.args:
                 p = request.args['path']
                 f = request.args['file']
                 _type = 'FILE'
@@ -53,6 +54,8 @@ def log_transaction(func):
             if 'move' in request.path:
                 action = 'MOVE'
                 path  = request.args['from']
+                if 'file' in request.path:
+                    _type = 'FILE'
             elif request.method == 'POST':
                 action ='CREATE'
             elif request.method == 'PUT':
@@ -61,14 +64,20 @@ def log_transaction(func):
                 action = 'DELETE'
             else:
                 LOG = False
-            if LOG: 
-                tx = Transaction(user=kwargs['username'],
-                                 type=_type,
-                                 action=action,
-                                 pathname=path,
-                                 ip_address=request.remote_addr  
-                                 )
-                g.db.add(tx)
+            try:
+                if LOG: 
+                    tx = Transaction(user=kwargs['username'],
+                                     type=_type,
+                                     action=action,
+                                     pathname=path,
+                                     ip_address=request.remote_addr  
+                                     )
+                    g.db.add(tx)
+                    print "yes"
+                    txid = tx.hash()
+                    res[0]['txid'] = txid
+            except Exception as e:
+                print e
         return res
 
     return decorator
@@ -98,7 +107,7 @@ def file(username):
                         File.dir == dir.inode).first()
     if request.method == "PUT":
         if file is None:
-            return "", status.HTTP_405_METHOD_NOT_ALLOWED
+            return {}, status.HTTP_405_METHOD_NOT_ALLOWED
         data = request.get_json()
         to_update = File(name=filename,
                          owner=user.name,
@@ -106,7 +115,7 @@ def file(username):
                          **data)
         g.db.delete(file)
         g.db.add(to_update)
-        return "", status.HTTP_202_ACCEPTED
+        return {}, status.HTTP_202_ACCEPTED
     elif request.method == "POST":
         if file is not None:
             return "", status.HTTP_409_CONFLICT
@@ -116,12 +125,12 @@ def file(username):
                        dir=dir.inode,
                        **data)
         g.db.add(to_make)
-        return "", status.HTTP_201_CREATED
+        return {}, status.HTTP_201_CREATED
     elif request.method == "DELETE":
         if file is None:
             return "", status.HTTP_405_METHOD_NOT_ALLOWED
         g.db.delete(file)
-        return "", status.HTTP_202_ACCEPTED
+        return {}, status.HTTP_202_ACCEPTED
     else: #GET
         print 'yes'
         if file is None:
@@ -144,7 +153,7 @@ def dir(username):
             return "", status.HTTP_405_METHOD_NOT_ALLOWED
         new_dir = Directory(path=path, owner=user.name)
         g.db.add(new_dir)
-        return "", status.HTTP_201_CREATED
+        return {}, status.HTTP_201_CREATED
     elif request.method == "GET":
         if dir is None:
             return "", status.HTTP_404_NOT_FOUND
@@ -154,7 +163,7 @@ def dir(username):
             return "", status.HTTP_404_NOT_FOUND
         [g.db.delete(f) for f in dir.files]
         g.db.delete(dir)
-        return "", status.HTTP_202_ACCEPTED
+        return {}, status.HTTP_202_ACCEPTED
 
 
 @api.route("/api/move-dir/<string:username>", methods=["POST"])
@@ -178,7 +187,7 @@ def move_dir(username):
 
     from_dir.path = to_path
     g.db.add(from_dir) 
-    return "", status.HTTP_202_ACCEPTED
+    return {}, status.HTTP_202_ACCEPTED
 
 
 @api.route("/api/move-file/<string:username>", methods=["POST"])
@@ -191,6 +200,7 @@ def move_file(username):
     from_path, old_name = os.path.split(from_fpath)
     to_path, new_name = os.path.split(to_fpath)
 
+    print "yes"
     from_dir = get_dir(username, from_path)
     to_dir   = get_dir(username, to_path)
     user     = get_user(username)
@@ -205,7 +215,8 @@ def move_file(username):
     file.dir = to_dir.inode
     file.name = new_name
     g.db.add(file)
-    return "", status.HTTP_202_ACCEPTED
+    print "yes"
+    return {}, status.HTTP_202_ACCEPTED
                                 
 @api.route("/api/latest-change/<string:username>")
 @auth.login_required
@@ -215,12 +226,10 @@ def latest(username):
                  .order_by(Transaction.timestamp.desc())\
                  .first()
 
-    out = {'latest-change': datetime(1941, 12, 7)}
+    out = {'latest-change': "initial-blank-txid"}
     if latest is not None:
     # return a change from last century to keep the api simple by default
-        out = latest.to_dict()
-    ts = out['latest-change']
-    out['latest-change'] = ts.strftime('%Y-%m-%d %H:%M:%S.%f') 
+        out['latest-change'] =  latest.hash()
     return out
 
 @api.route("/api/all/<string:username>")
@@ -260,4 +269,4 @@ def list_history(username):
     return {'everything': list(everything) }
 
 if __name__ == '__main__':
-    api.run(host='0.0.0.0', port=5000,debug=True)
+    api.run(host='0.0.0.0', port=5000, debug=True)

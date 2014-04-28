@@ -13,7 +13,7 @@
 {% for tx in txns %}
     <div class="row">
         <div class="col-md-2">{{ tx.ip_address }}</div>
-        <div class="col-md-2">{{ tx.pathname }}</div>
+        <div class="col-md-2"><p>{{ tx.pathname }}</p></div>
         <div class="col-md-4">{{ tx.timestamp }}</div>
         <div class="col-md-1">{{ tx.type }}</div>
         <div class="col-md-3">{{ tx.action }}</div>

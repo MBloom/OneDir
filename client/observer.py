@@ -3,6 +3,7 @@ import time
 from datetime import datetime, timedelta
 from binascii import hexlify
 
+from requests import ConnectionError
 from watchdog.observers.polling import PollingObserver
 from watchdog.events import FileSystemEventHandler
 from watchdog.utils.dirsnapshot import DirectorySnapshot, DirectorySnapshotDiff
@@ -82,34 +83,36 @@ def file_dict(path):
 def commit_changes(out_set):
     """Commits the changes in the local directory up to our server"""
     resps = []
+    txid = None
     for (action, file_t) in out_set:
         # these variables are overloaded
         file_path = file_t
         dir = file_path
         if action == "create":
             file_d = file_dict(file_path)
-            sc = API.create_file(file_path, file_d) 
+            txid = API.create_file(file_path, file_d) 
         elif action == "delete":
-            sc = API.delete_file(file_path)
+            txid = API.delete_file(file_path)
         elif action == "modified":
             file_d = file_dict(file_path)
-            sc = API.change_file(file_path, file_d)
+            txid = API.change_file(file_path, file_d)
         elif action == "moved":
             from_file, to_file = file_t
-            sc = API.move_file(from_file, to_file)
+            txid = API.move_file(from_file, to_file)
         elif action == "create_dir":
             dir = file_path
-            sc = API.create_dir(dir)
+            txid = API.create_dir(dir)
         elif action == "delete_dir":
             dir = file_path
-            sc = API.delete_dir(dir)
+            txid = API.delete_dir(dir)
         elif action == "moved_dir":
             from_dir, to_dir = file_t
-            sc = API.move_dir(from_dir, to_dir)
+            txid = API.move_dir(from_dir, to_dir)
         else:
             # Never get here
             print "THIS IS BAD"
             pass
+    return txid
 
 
 def take_snapshot(path):
@@ -119,10 +122,12 @@ def take_snapshot(path):
 
 def deal_with_diff(before, after):
     diff = DirectorySnapshotDiff(before, after) 
+    txid = None
     if has_changed(diff):
         print_diff(diff)
         change_set = make_change_set(diff) 
-        commit_changes(change_set)
+        txid = commit_changes(change_set)
+    return txid
 
 def latest_change(path):
     """The directories will report modified if anything within them changes"""
@@ -196,7 +201,12 @@ def run(path='.',
     path = os.path.realpath(path)
     API = ClientAPI(path, user, host=hostname, password=password) 
     print "Watching in: ", path
-    create_everything(path, API)
+    try:
+        create_everything(path, API)
+    except ConnectionError:
+        print "Server is DOWN"
+        sys.exit()
+    my_latest_txid = API.get_latest_txid()
     try:
         while True:
             before = take_snapshot(path)
@@ -204,20 +214,23 @@ def run(path='.',
             time.sleep(wait)
             after = take_snapshot(path)
 
-            last_modified = latest_change(path)
             upstream_changes = False
-            upstream_latest = API.get_latest()
+            upstream_txid = API.get_latest_txid()
             # if the changes on the server are newer we must deal
-            if upstream_latest > last_modified:
+            #print upstream_txid[:6], my_latest_txid[:6]
+            if upstream_txid != my_latest_txid:
                 upstream_changes = True
                 # delete everything, then download everything from the server
-                print "Upstream reports later changes"
+                print "Upstream reports a change"
                 everything = API.list_everything()
                 delete_everything(path, everything)
                 create_everything(path, API)
+                my_latest_txid = upstream_txid
                 print "Changes synced"
             if not nosync and not upstream_changes: # sync files...
-                deal_with_diff(before, after)
+                txid = deal_with_diff(before, after)
+                if txid is not None:
+                    my_latest_txid = txid
     except KeyboardInterrupt:
         print "Killing Program"
         sys.exit()
