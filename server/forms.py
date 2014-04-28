@@ -18,3 +18,12 @@ class RemovalForm(Form):
 	filename = StringField('FileName')
 	path = StringField('Path')
 	owner = StringField('Owner')
+
+class UserPwdChange(Form):
+	new_pwd = PasswordField('Password', validators=[Length(min=3, max=30)])
+	auth_pwd = PasswordField('Repeat Password')
+
+class AdminPwdChange(Form):
+	username = StringField('Username', validators=[Length(min=3, max=30)])
+	new_pwd = PasswordField('Password', validators=[Length(min=3, max=30)])
+	auth_pwd = PasswordField('Repeat Password')

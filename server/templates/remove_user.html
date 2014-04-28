@@ -7,7 +7,6 @@
 {% endblock head %}
 
 {% block main %}
-<h4>Enter the Username you would like to remove.</h4>
 <!-- Text input-->
 <script type="text/javascript">
     var user_list = [];
@@ -20,29 +19,35 @@
         });
     });
 </script>
-{% if message != None %}
-<div class="alert alert-danger alert-dismissable">
-  <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-  <strong>Warning!</strong> {{message}}
-</div>
-{% endif %}
-<form method=post action={{ url_for('remove_user') }}>
-<fieldset>
-<div class="control-group" style="padding-bottom:10px;">
-  <div class="controls">
-    <input id="username" name="username" type="text" placeholder="Username" autocomplete=off class="input-xlarge">
+<div align="center" class="container">
+  <div class="content" style="background:#d2b0b6;">
+    {% if message != None %}
+    <div class="alert alert-danger alert-dismissable">
+      <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+      <strong>Warning!</strong> {{message}}
+    </div>
+    {% endif %}
+    <form method=post action={{ url_for('remove_user') }}>
+    <fieldset>
+    <legend>Remove User</legend>
+    <h4>Username</h4>
+    <div class="control-group" style="padding-bottom:20px;">
+      <div class="controls">
+        <input id="username" name="username" type="text" placeholder="Username" autocomplete=off class="input-xlarge">
+      </div>
+    </div>
+
+    <!-- Button -->
+    <div class="control-group">
+      <div class="controls">
+        <button type=send class="btn btn-md btn-danger">Remove</button>
+      </div>
+    </div>
+
+    </fieldset>
+    </form>
   </div>
 </div>
-
-<!-- Button -->
-<div class="control-group">
-  <div class="controls">
-    <button type=send class="btn btn-sm btn-danger">Remove</button>
-  </div>
-</div>
-
-</fieldset>
-</form>
 
 {% if error %} {{ error }} {% endif %}
 {% endblock main %}

@@ -260,4 +260,4 @@ def list_history(username):
     return {'everything': list(everything) }
 
 if __name__ == '__main__':
-    api.run(debug=True)
+    api.run(host='0.0.0.0', port=5000,debug=True)

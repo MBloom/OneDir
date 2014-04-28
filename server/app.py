@@ -5,7 +5,7 @@ from flask.ext.login import LoginManager, login_required, login_user, logout_use
 
 import config, models
 from models import Session, User, File, Transaction
-from forms import LoginForm, AccountForm, RemovalForm, AccountRemoval
+from forms import LoginForm, AccountForm, RemovalForm, AccountRemoval, UserPwdChange, AdminPwdChange
 
 app = Flask(__name__)
 
@@ -57,8 +57,6 @@ def create_user():
 def remove_user():
     all_users = g.db.query(User).all()
     form = AccountRemoval(request.form)
-    print form.validate()
-    print form.data
     if form.validate():
         user_toRemove = models.get_user(form.data['username'])
         if user_toRemove == None:
@@ -74,6 +72,34 @@ def remove_user():
         return render_template("remove_user.html", all_users=all_users, form=form, message=None)
     else:
         abort(404)
+
+@app.route('/change_pwd/', methods=["GET", "POST"])
+def change_pwd():
+    form = AdminPwdChange(request.form)
+    if form.validate():
+        user = models.get_user(form.data['username'])
+        if user == None:
+            message = "No such user exists"
+            return render_template("change_pwd.html", form=form, message=message)
+        elif form.data['new_pwd'] != form.data['auth_pwd']:
+            message = "Passwords do not match."
+            return render_template("change_pwd.html", form=form, message=message)
+        else:
+            user.password = form.data['new_pwd']
+            return redirect(url_for("admin"))
+    return render_template("change_pwd.html", form=form, message=None)
+
+@app.route('/info/', methods=["GET", "POST"])
+def info():
+    form = UserPwdChange(request.form)
+    if form.validate():
+        if form.data['new_pwd'] != form.data['auth_pwd']:
+            message = "Passwords do not match."
+            return render_template("info.html", user=current_user, form=form, message=message)
+        else:
+            current_user.password = form.data['new_pwd']
+            return render_template("info.html", user=current_user, form=form, message=None)
+    return render_template("info.html", user=current_user, form=form, message=None)
 
 @app.route('/login/', methods=["GET", "POST"])
 def login():

@@ -41,9 +41,9 @@
 	   <td>{{ u.userClass }}</a></td>
 	</tr>
 	<tr style="display:none;">
-		<td colspan="3">
+		<td colspan="3" class="fileinfo">
 			{% if user_files[u]|length == 0 %}
-			<ul><em>No files exist for this user.</em></ul>
+			<ul class="fileinfo"><em>No files exist for this user.</em></ul>
 			{%else%}
 			{% for f in user_files[u] %}
 				<ul>
@@ -51,8 +51,8 @@
 					<input type="hidden" name="filename" value={{f.name}}>
 					<input type="hidden" name="owner" value={{f.owner}}>
 					<input type="hidden" name="path" value={{f.dir}}>
-					<button type=send class="admin_delete delete">
-						<span class="glyphicon glyphicon-remove"} style="width:3%"></span>
+					<button type=send class="delete">
+						<span id="admin_delete" class="glyphicon glyphicon-remove"></span>
 					</button>
 				</form>
 				<a href={{ url_for('file_view', name=f.name) }} style="width:40%"> {{ f.name }}</a>

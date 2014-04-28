@@ -8,12 +8,32 @@
 {% endblock head %}
 
 {% block main %}
+<!-- Text input-->
+<script type="text/javascript">
+    var file_list = [];
+    {% for f in files %}
+    file_list.push("{{ f.name }}");
+    {% endfor %}
+    $(function() {
+        $( "#file_search" ).autocomplete({
+            source: file_list
+        });
+    });
+</script>
 <div class = "jumbotron">
     {% if uname == None %}
     <h2>Please <a href={{ url_for('login') }}>login</a> to access your files</h2>
     {% else %}
     <h1>Welcome, {{ uname }}</h1>
     <p class="lead">Here is a list of all your files that have been uploaded to the OneDir server. To view the contents of any file simply click on it's name below.</p>
+    <div class="row">
+        <div class="input-group">
+          <input id="file_search" name="file_search" type="text" placeholder"Filename..." class="form-control">
+          <span class="input-group-btn">
+            <button id="jumbo-btn" class="btn" type="button">Open</button>
+          </span>
+        </div>
+    </div>
 </div>
 <div>
     {% if files|length == 0 %}
@@ -21,13 +41,11 @@
       <h1>You have no files to display <small><a href={{ url_for('log_view', user=uname)}}>(Transaction History)</a></small></h1>
     </div>
     {% else %}
-    <div class="page-header">
-      <h1>Your Files <small><a href={{ url_for('log_view', user=uname)}}>(Transaction History)</a></small></h1>
-    </div>
+      <h2 class="subtext">Your Files <small><a href={{ url_for('log_view', user=uname)}}>(Transaction History)</a></small></h2>
     {% for file in files %}
-    <div class="row">
-        <div class="col-md-6">
-            <h3><a href={{ url_for('file_view', name=file.name) }}>{{ file.name }}</a></h3>
+    <div align="center" class="row">
+        <div class="col-md-4">
+            <p style="font-size:18pt;"><a href={{ url_for('file_view', name=file.name) }}>{{ file.name }}</a></p>
         </div>
         <div class="col-md-4"></div>
         <div class="col-md-1">
@@ -36,7 +54,7 @@
                 <input type="hidden" name="owner" value={{file.owner}}>
                 <input type="hidden" name="path" value={{file.dir}}>
                 <button type=send class="delete">
-                    <span class="glyphicon glyphicon-trash"} style="width:3%"></span>
+                    <span class="glyphicon glyphicon-trash" style="width:3%"></span>
                 </button>
             </form>
         </div>

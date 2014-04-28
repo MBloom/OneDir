@@ -109,7 +109,7 @@ class File(Base):
                 'name': self.name,
                 'permissions': self.permissions,
                 'stored_on': self.stored_on,
-                'file_path': os.path.join(self.directory.path, self.name)
+                'file_path': os.path.join('/', self.name)
               }
         return out
 
