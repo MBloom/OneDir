@@ -178,6 +178,7 @@ def file_upload(user):
         return "File already exists", 409
 
     new_file = File(name=name, owner=user, content=cont, dir=root.inode)
+    new_file.directory = root
     tx = Transaction(user=user, 
                      action="CREATE", 
                      type="FILE", 

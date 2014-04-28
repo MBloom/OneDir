@@ -174,7 +174,9 @@ class ClientAPI():
         """downloads of all the active content from the server"""
         url = "http://{}/api/all/{}".format(self.host, self.user)
         resp = requests.get(url, headers=H, auth=self.auth)
-        assert resp.status_code == 200
+        if resp.status_code == 401:
+            print "Bad Login"
+            sys.exit()
         _json = resp.json()
         dirs = _json['dirs']
         files = _json['files']
