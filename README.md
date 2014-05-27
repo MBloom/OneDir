@@ -1,4 +1,4 @@
-cs3240-project
+OneDir Project
 ==============
 
 
